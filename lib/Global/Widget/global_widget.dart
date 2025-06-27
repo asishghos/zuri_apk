@@ -225,91 +225,6 @@ class GlobalTextButton extends StatelessWidget {
   }
 }
 
-// class ExpandableCard extends StatefulWidget {
-//   final String title;
-//   final String content;
-
-//   const ExpandableCard({Key? key, required this.title, required this.content})
-//     : super(key: key);
-
-//   @override
-//   _ExpandableCardState createState() => _ExpandableCardState();
-// }
-
-// class _ExpandableCardState extends State<ExpandableCard> {
-//   bool _isExpanded = false;
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       decoration: BoxDecoration(
-//         border: Border.all(color: const Color(0xFFDC4C72), width: 2),
-//         borderRadius: BorderRadius.circular(32),
-//       ),
-//       child: Column(
-//         children: [
-//           GestureDetector(
-//             onTap: () {
-//               setState(() {
-//                 _isExpanded = !_isExpanded;
-//               });
-//             },
-//             child: Container(
-//               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-//               child: Row(
-//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: [
-//                   Expanded(
-//                     child: Text(
-//                       widget.title,
-//                       style: GoogleFonts.libreFranklin(
-//                         fontSize: 18,
-//                         fontWeight: FontWeight.w600,
-//                         color: const Color(0xFFDC4C72),
-//                       ),
-//                     ),
-//                   ),
-//                   Icon(
-//                     _isExpanded ? IconlyLight.arrowUp2 : IconlyLight.arrowDown2,
-//                     size: 30,
-//                     color: Color(0xFFDC4C72),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//           ClipRRect(
-//             child: AnimatedCrossFade(
-//               crossFadeState:
-//                   _isExpanded
-//                       ? CrossFadeState.showSecond
-//                       : CrossFadeState.showFirst,
-//               duration: const Duration(milliseconds: 300),
-//               firstChild: Container(),
-//               secondChild: Padding(
-//                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 15),
-//                 child: Column(
-//                   children: [
-//                     const Divider(color: Color(0xFFDC4C72), thickness: 1),
-//                     const SizedBox(height: 10),
-//                     Text(
-//                       widget.content,
-//                       style: GoogleFonts.libreFranklin(
-//                         fontSize: 14,
-//                         fontWeight: FontWeight.w400,
-//                         color: AppColors.subTitleTextCol,
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 class GlobalRichTextDescription extends StatelessWidget {
   final double? fontSize;
   final FontWeight? fontWeight;
@@ -449,4 +364,75 @@ String getDaySuffix(int day) {
     default:
       return 'th';
   }
+}
+
+Future<void> showGlobalDeleteConfirmationDialog({
+  required BuildContext context,
+  required String title,
+  required String content,
+  required Future<void> Function() onConfirm,
+}) {
+  return showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        title: Text(
+          title,
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF131927),
+          ),
+        ),
+        content: Text(
+          content,
+          style: GoogleFonts.libreFranklin(
+            fontSize: 14,
+            color: Color(0xFF394050),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.libreFranklin(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF394050),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await onConfirm();
+                Navigator.of(context).pop();
+              } catch (e) {
+                Navigator.of(context).pop();
+                // You can show error snackbar here if needed
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFFF5236),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(32),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              'Delete',
+              style: GoogleFonts.libreFranklin(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }

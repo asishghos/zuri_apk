@@ -1,3 +1,5 @@
+import 'dart:developer' as Developer;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,12 +8,12 @@ import 'package:image_cropper/image_cropper.dart';
 import 'dart:io';
 import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/Global/Widget/global_dialogbox.dart';
-import 'package:testing2/services/Class/result_class.dart';
-import 'package:testing2/services/DataSource/style_analysis_api.dart';
-import 'package:testing2/services/DataSource/image_check_api.dart';
+import 'package:testing2/services/DataSource/fullbody_check_api.dart';
+import 'package:testing2/services/Temp/TempUserDataStore.dart';
 
 class AutoImageUploadPage extends StatefulWidget {
   final File file;
@@ -24,12 +26,18 @@ class AutoImageUploadPage extends StatefulWidget {
 class _AutoImageUploadPageState extends State<AutoImageUploadPage> {
   List<File> uploadedImages = [];
   final ImagePicker _picker = ImagePicker();
+  late SharedPreferences prefs;
 
   @override
   void initState() {
     super.initState();
+    initPrefs();
     // Add the required file to uploadedImages when the page initializes
     uploadedImages.add(widget.file);
+  }
+
+  Future<void> initPrefs() async {
+    prefs = await SharedPreferences.getInstance();
   }
 
   @override
@@ -313,85 +321,55 @@ class _AutoImageUploadPageState extends State<AutoImageUploadPage> {
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child:
-          // hasPhotos
-          // ? ElevatedButton(
-          //       onPressed: () {
-          //         // TODO: Implement reveal functionality
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           const SnackBar(
-          //             content: Text("Reveal functionality coming soon!"),
-          //           ),
-          //         );
-          //       },
-          //       style: ElevatedButton.styleFrom(
-          //         backgroundColor: primaryPink,
-          //         shape: RoundedRectangleBorder(
-          //           borderRadius: BorderRadius.circular(25),
-          //         ),
-          //         elevation: 0,
-          //       ),
-          //       child: const Text(
-          //         "Reveal my best look, Already!",
-          //         style: GoogleFonts.libreFranklin(
-          //           fontSize: 16,
-          //           fontWeight: FontWeight.w600,
-          //           color: Colors.white,
-          //         ),
-          //       ),
-          //     ) :
-          OutlinedButton(
-            onPressed: () async {
-              setState(() {
-                _isLoading = true;
-              });
-              try {
-                final result = await StyleAnalyzeApiService.autoAanalyzeservice(
-                  uploadedImages[0],
-                );
-                print(result);
-                if (!mounted) return;
-                setState(() {
-                  _isLoading = false;
-                });
-                if (result != null) {
-                  context.goNamed("styleAnalyze", extra: result);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Image analysis failed.'),
-                      backgroundColor: Color(0xFF8D6E63),
-                    ),
-                  );
-                }
-              } catch (e) {
-                setState(() {
-                  _isLoading = false;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: $e'),
-                    backgroundColor: Color(0xFF8D6E63),
-                  ),
-                );
-              }
-            },
+      child: OutlinedButton(
+        onPressed: () async {
+          await TempUserDataStore().save(imageFile: uploadedImages[0]);
+          context.goNamed('signup');
+          // setState(() {
+          //   _isLoading = true;
+          // });
+          // try {
+          // final result = await StyleAnalyzeApiService.autoAanalyzeservice(
+          //   uploadedImages[0],
+          // );
+          //   await prefs.setString(
+          //     "bodyShape",
+          //     result!.bodyShapeResult?.bodyShape ?? '',
+          //   );
+          //   await prefs.setString(
+          //     "skinTone",
+          //     result.bodyShapeResult?.skinTone ?? '',
+          //   );
+          //   Developer.log(result.toString());
+          //   if (!mounted) return;
+          //   setState(() {
+          //     _isLoading = false;
+          //   });
+          //   context.goNamed('signup');
+          //   // context.goNamed("styleAnalyze", extra: result);
+          // } catch (e) {
+          //   setState(() {
+          //     _isLoading = false;
+          //   });
+          //   showErrorSnackBar(context, 'Error: $e');
+          // }
+        },
 
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFDC4C72), width: 2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(32),
-              ),
-            ),
-            child: Text(
-              "Reveal my best look, Already!",
-              style: GoogleFonts.libreFranklin(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFFDC4C72),
-              ),
-            ),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Color(0xFFDC4C72), width: 2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(32),
           ),
+        ),
+        child: Text(
+          "Reveal my best look, Already!",
+          style: GoogleFonts.libreFranklin(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFFDC4C72),
+          ),
+        ),
+      ),
     );
   }
 
@@ -534,8 +512,11 @@ class _AutoImageUploadPageState extends State<AutoImageUploadPage> {
           _imageFile = File(pickedFile.path);
         });
 
-        final response = await ApiService4.imageCheckService(_imageFile!);
-        print(response);
+        final response =
+            await FullbodyImageCheckApiServices.fullbodyImageCheckApiServices(
+              _imageFile!,
+            );
+        Developer.log(response.toString());
         setState(() {
           _isLoading = false;
         });
@@ -568,7 +549,7 @@ class _AutoImageUploadPageState extends State<AutoImageUploadPage> {
       setState(() {
         _isLoading = false;
       });
-      debugPrint('Error in _pickImage: $e');
+      Developer.log('Error in _pickImage: $e');
     }
   }
 

@@ -12,7 +12,7 @@ import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/Global/Widget/global_dialogbox.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:dotted_border/dotted_border.dart';
-import 'package:testing2/services/DataSource/image_check_api.dart';
+import 'package:testing2/services/DataSource/fullbody_check_api.dart';
 
 class ScanDiscoverPage extends StatefulWidget {
   const ScanDiscoverPage({Key? key}) : super(key: key);
@@ -96,7 +96,10 @@ class _ScanDiscoverPageState extends State<ScanDiscoverPage> {
           _imageFile = File(pickedFile.path);
         });
 
-        final response = await ApiService4.imageCheckService(_imageFile!);
+        final response =
+            await FullbodyImageCheckApiServices.fullbodyImageCheckApiServices(
+              _imageFile!,
+            );
         print(response);
         setState(() {
           _isLoading = false;

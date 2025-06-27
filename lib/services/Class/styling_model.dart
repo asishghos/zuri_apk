@@ -55,59 +55,66 @@ class GeneratedOccasionResponse {
   }
 }
 
-class RecommendationCritique {
-  final String itemName;
-  final String feedback;
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-  RecommendationCritique({required this.itemName, required this.feedback});
+class StyledOutfitResponse {
+  final String recommendations;
+  final String occasion;
+  final bool isPerfectMatch;
+  final List<ResultItem> results;
+  final List<String> badItemImages;
+  final Map<String, SuitabilityDetail> suitabilityDetails;
 
-  factory RecommendationCritique.fromJson(Map<String, dynamic> json) {
-    return RecommendationCritique(
-      itemName: json['itemName'],
-      feedback: json['feedback'],
+  StyledOutfitResponse({
+    required this.recommendations,
+    required this.occasion,
+    required this.isPerfectMatch,
+    required this.results,
+    required this.badItemImages,
+    required this.suitabilityDetails,
+  });
+
+  factory StyledOutfitResponse.fromJson(Map<String, dynamic> json) {
+    return StyledOutfitResponse(
+      recommendations: json['recommendations'] ?? '',
+      occasion: json['occasion'] ?? '',
+      isPerfectMatch: json['isPerfectMatch'] ?? false,
+      results: (json['results'] as List)
+          .expand((e) => e is List ? e : [e]) // flatten nested list
+          .map((e) => ResultItem.fromJson(e))
+          .toList(),
+      badItemImages: (json['badItemImages'] as List)
+          .map((e) => e.toString())
+          .toList(),
+      suitabilityDetails: (json['suitabilityDetails'] as Map<String, dynamic>)
+          .map(
+            (key, value) => MapEntry(key, SuitabilityDetail.fromJson(value)),
+          ),
     );
   }
 }
 
-class StyleRecommendationResponse {
-  final List<RecommendationCritique> recommendations;
-  final String? modelImage; // base64 image
-  final Map<String, dynamic>? wardrobeImage;
-  final List<dynamic>? aiGeneratedImages;
-  final bool hasWardrobeImage;
-  final int aiImageCount;
-  final String message;
-  final List<String> badItemImages;
-  final bool isPerfectMatch;
-  final Map<String, dynamic>? suitabilityDetails;
+class ResultItem {
+  final String type;
+  final String? imageB64;
 
-  StyleRecommendationResponse({
-    required this.recommendations,
-    required this.modelImage,
-    required this.wardrobeImage,
-    required this.aiGeneratedImages,
-    required this.hasWardrobeImage,
-    required this.aiImageCount,
-    required this.message,
-    required this.badItemImages,
-    required this.isPerfectMatch,
-    required this.suitabilityDetails,
-  });
+  ResultItem({required this.type, this.imageB64});
 
-  factory StyleRecommendationResponse.fromJson(Map<String, dynamic> json) {
-    return StyleRecommendationResponse(
-      recommendations: (json['recommendations'] as List)
-          .map((e) => RecommendationCritique.fromJson(e))
-          .toList(),
-      modelImage: json['modelImage'],
-      wardrobeImage: json['wardrobeImage'],
-      aiGeneratedImages: json['aiGeneratedImages'],
-      hasWardrobeImage: json['hasWardrobeImage'] ?? false,
-      aiImageCount: json['aiImageCount'] ?? 0,
-      message: json['message'],
-      badItemImages: List<String>.from(json['badItemImages'] ?? []),
-      isPerfectMatch: json['isPerfectMatch'] ?? false,
-      suitabilityDetails: json['suitabilityDetails'],
+  factory ResultItem.fromJson(Map<String, dynamic> json) {
+    return ResultItem(type: json['type'], imageB64: json['imageB64']);
+  }
+}
+
+class SuitabilityDetail {
+  final String status;
+  final String reasoning;
+
+  SuitabilityDetail({required this.status, required this.reasoning});
+
+  factory SuitabilityDetail.fromJson(Map<String, dynamic> json) {
+    return SuitabilityDetail(
+      status: json['status'] ?? '',
+      reasoning: json['reasoning'] ?? '',
     );
   }
 }

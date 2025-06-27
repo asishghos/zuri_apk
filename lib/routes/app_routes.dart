@@ -43,7 +43,7 @@ import 'package:testing2/services/Class/image_display_model.dart';
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: '/home2',
+    initialLocation: '/splash',
     debugLogDiagnostics: true,
     routes: [
       /// Shell with BottomNav
@@ -415,29 +415,29 @@ class AppRouter {
           );
         },
       ),
-      GoRoute(
-        path: '/imageDisplay',
-        name: 'imageDisplay',
-        builder: (context, state) {
-          final args = state.extra as ImageDisplayClass?;
+      // GoRoute(
+      //   path: '/imageDisplay',
+      //   name: 'imageDisplay',
+      //   builder: (context, state) {
+      //     final args = state.extra as ImageDisplayClass?;
 
-          if (args == null) return const ErrorPage();
+      //     if (args == null) return const ErrorPage();
 
-          return MainShell(
-            child: ImageDisplayPage(
-              result: args.result,
-              clothingType: args.clothingType,
-              occasion: args.occasion,
-              originalImage: args.originalImage,
-            ),
-            appBarTitleGrey: 'Your Results',
-            showBackButton: true,
-            showBottomNavBar: true,
-            showAppBar: true,
-            loc: 'home2',
-          );
-        },
-      ),
+      //     return MainShell(
+      //       child: ImageDisplayPage(
+      //         result: args.result,
+      //         clothingType: args.clothingType,
+      //         occasion: args.occasion,
+      //         originalImage: args.originalImage,
+      //       ),
+      //       appBarTitleGrey: 'Your Results',
+      //       showBackButton: true,
+      //       showBottomNavBar: true,
+      //       showAppBar: true,
+      //       loc: 'home2',
+      //     );
+      //   },
+      // ),
 
       /// Manual Flow
       GoRoute(
@@ -651,8 +651,17 @@ class AppRouter {
         name: 'createOutfit',
         builder: (context, state) {
           final occasion = state.uri.queryParameters['occasion'];
+          final imagePathsParam = state.uri.queryParameters['imagePaths'];
+
+          List<File>? imagesList;
+          if (imagePathsParam != null && imagePathsParam.isNotEmpty) {
+            imagesList = imagePathsParam
+                .split(',')
+                .map((path) => File(path.trim()))
+                .toList();
+          }
           return MainShell(
-            child: CreateOutfitPage(occation: occasion),
+            child: CreateOutfitPage(occation: occasion, images: imagesList),
             showAppBar: false,
             showBackButton: false,
             showBottomNavBar: false,

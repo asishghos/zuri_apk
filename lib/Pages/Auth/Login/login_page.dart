@@ -9,7 +9,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
+import 'package:testing2/services/Class/style_analyze_model.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
+import 'package:testing2/services/DataSource/style_analysis_api.dart';
+import 'package:testing2/services/Temp/TempUserDataStore.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -47,6 +50,10 @@ class _LoginPageState extends State<LoginPage> {
     if (result['success']) {
       final prefs = await SharedPreferences.getInstance();
       final user = result['user'];
+      if (user == null || user['_id'] == null) {
+        showErrorSnackBar(context, 'Invalid user data');
+        return;
+      }
 
       await prefs.setString('userID', user['_id']);
       await prefs.setString('userFullName', user['fullName']);
@@ -56,10 +63,54 @@ class _LoginPageState extends State<LoginPage> {
       bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
       if (isFirstTime) {
         await prefs.setBool('isFirstTime', false);
-        context.goNamed('styleAnalyze');
+
+        try {
+          final loaded = await TempUserDataStore().load();
+          if (loaded) {
+            print(TempUserDataStore().bodyShape);
+            print(TempUserDataStore().skinTone);
+            print(TempUserDataStore().imageFile);
+            final StyleAnalyzeClass? response;
+            if (TempUserDataStore().imageFile == null) {
+              response = await StyleAnalyzeApiService.manualAanalyzeservice(
+                TempUserDataStore().bodyShape ?? '',
+                TempUserDataStore().skinTone ?? '',
+              );
+            } else {
+              response = await StyleAnalyzeApiService.autoAanalyzeservice(
+                TempUserDataStore().imageFile!,
+              );
+            }
+            await prefs.setString(
+              "bodyShape",
+              response!.bodyShapeResult?.bodyShape ?? '',
+            );
+            await prefs.setString(
+              "skinTone",
+              response.bodyShapeResult?.skinTone ?? '',
+            );
+            TempUserDataStore().clear();
+            context.goNamed(
+              'styleAnalyze',
+              queryParameters: {
+                "bodyShape": response.bodyShapeResult?.bodyShape,
+                "skinTone": response.bodyShapeResult?.skinTone,
+              },
+            );
+          } else {
+            Developer.log("Data not coming from TempUserDataStore.dart");
+            showErrorSnackBar(
+              context,
+              "Data not coming from TempUserDataStore.dart",
+            );
+          }
+        } catch (e, stack) {
+          Developer.log("StyleAnalyze error: $e\n$stack");
+          showErrorSnackBar(context, "StyleAnalyze error: $e\n$stack");
+        }
+
         return;
       }
-
       // 2️⃣ Location Permission & Service Check (Manual)
       final locationStatus = await Geolocator.isLocationServiceEnabled();
       if (!locationStatus) {
@@ -69,7 +120,6 @@ class _LoginPageState extends State<LoginPage> {
           return;
         }
       }
-
       // final isServiceEnabled = await _weatherService.isLocationServiceEnabled();
       // if (!isServiceEnabled) {
       //   _showLocationSettingsDialog();

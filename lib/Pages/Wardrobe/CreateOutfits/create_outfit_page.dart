@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/services/Class/styling_model.dart';
 import 'package:testing2/services/DataSource/styling_api.dart';
 
@@ -25,12 +26,22 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
   PageController _pageController = PageController();
   int _currentIndex = 0;
   GeneratedOccasionResponse? _generatedResponse;
-  StyleRecommendationResponse? _recommendationResponse;
+  StyledOutfitResponse? _recommendationResponse;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _generateLook(widget.occation ?? "Casual");
+    _initializeData();
+  }
+
+  void _initializeData() {
+    if (widget.images == null || widget.images!.isEmpty) {
+      _generateLook(widget.occation ?? "Casual");
+    } else {
+      _fetchStyleRecommender("Casual", widget.images!);
+    }
   }
 
   @override
@@ -39,34 +50,43 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     super.dispose();
   }
 
-  bool _isLoading = false;
-
   Future<void> _generateLook(String occasion) async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
-    final response = await GenerateLookService.generateLookForOccasion(
-      occasion,
-    );
-
-    if (response != null) {
-      Developer.log(
-        "🎉 Occasion: ${response.occasion}, Images: ${response.message}",
+    try {
+      final response = await GenerateLookService.generateLookForOccasion(
+        occasion,
       );
-      for (var look in response.results) {
+      Developer.log(response.toString());
+
+      if (response != null && response.results.isNotEmpty) {
         Developer.log(
-          "➡️ ${look.type} look${look.lookNumber != null ? ' #${look.lookNumber}' : ''}",
+          "🎉 Occasion: ${response.occasion}, Images: ${response.message}",
         );
+        for (var look in response.results) {
+          Developer.log(
+            "➡️ ${look.type} look${look.lookNumber != null ? ' #${look.lookNumber}' : ''}",
+          );
+        }
+        setState(() {
+          _generatedResponse = response;
+          _isLoading = false;
+        });
+      } else {
+        Developer.log("❌ Failed to generate looks - Empty response");
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'No looks generated for this occasion';
+        });
       }
-      setState(() {
-        _generatedResponse = response;
-        _isLoading = false;
-      });
-    } else {
-      Developer.log("❌ Failed to generate looks");
+    } catch (e) {
+      Developer.log("❌ Failed to generate looks - Error: $e");
       setState(() {
         _isLoading = false;
+        _errorMessage = 'Failed to generate looks. Please try again.';
       });
     }
   }
@@ -75,24 +95,56 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     String occasion,
     List<File> images,
   ) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
-      final response = await GenerateLookService.uploadAndGetRecommendation(
-        imageFiles: images,
+      final response = await GenerateLookService.getStyleRecommender(
+        images: images,
         occasion: occasion,
       );
-      Developer.log(
-        "🎉 Occasion: ${response?.aiGeneratedImages}, Images: ${response?.message}",
-      );
-      setState(() {
-        _recommendationResponse = response;
-        _isLoading = false;
-      });
+
+      if (response!.results.isEmpty) {
+        // Developer.log(response.toString());
+        Developer.log(
+          "🎉 Occasion: ${response.occasion}, Recommendations: ${response.recommendations}",
+        );
+        setState(() {
+          _recommendationResponse = response;
+          _isLoading = false;
+        });
+      } else {
+        Developer.log("❌ Failed to generate recommendations - Empty response");
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'No recommendations generated';
+        });
+      }
     } catch (e) {
       Developer.log("❌ Failed to generate looks. Error is: ${e}");
       setState(() {
         _isLoading = false;
+        _errorMessage = 'Failed to generate recommendations. Please try again.';
       });
     }
+  }
+
+  bool get _hasData {
+    return (_generatedResponse != null &&
+            _generatedResponse!.results.isNotEmpty) ||
+        (_recommendationResponse != null &&
+            _recommendationResponse!.results.isNotEmpty);
+  }
+
+  int get _totalItems {
+    if (_generatedResponse != null) {
+      return _generatedResponse!.results.length;
+    } else if (_recommendationResponse != null) {
+      return _recommendationResponse!.results.length;
+    }
+    return 0;
   }
 
   @override
@@ -120,7 +172,6 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // folllow the main _shell app bar style------------------------------------------
                     Text.rich(
                       TextSpan(
                         children: [
@@ -129,7 +180,6 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                             style: GoogleFonts.libreFranklin(
                               color: AppColors.titleTextColor,
                               fontSize: 16,
-                              // fontWeight: FontWeight.w600,
                             ),
                           ),
                           TextSpan(
@@ -137,7 +187,6 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                             style: GoogleFonts.libreFranklin(
                               color: AppColors.textPrimary,
                               fontSize: 16,
-                              // fontWeight: FontWeight.w600,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -169,21 +218,9 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
           // Content Section
           Expanded(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : _generatedResponse == null
-                ? Center(
-                    child: Text(
-                      'Failed to generate looks',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  )
-                : _generatedResponse!.results.isEmpty
-                ? Center(
-                    child: Text(
-                      'No outfit generated',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
+                ? LoadingPage()
+                : !_hasData
+                ? _buildErrorState()
                 : SingleChildScrollView(
                     padding: EdgeInsets.all(20),
                     child: Column(
@@ -193,7 +230,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "Your Curated Look (${_currentIndex + 1}/${_generatedResponse!.results.length})",
+                              "Your Curated Look (${_currentIndex + 1}/$_totalItems)",
                               style: GoogleFonts.libreFranklin(
                                 color: AppColors.titleTextColor,
                                 fontSize: 16,
@@ -210,16 +247,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                _currentIndex <
-                                        _generatedResponse!.results.length
-                                    ? (_generatedResponse!
-                                                  .results[_currentIndex]
-                                                  .type
-                                                  .toLowerCase() ==
-                                              'wardrobe'
-                                          ? "From your Closet"
-                                          : "From Ask Zuri")
-                                    : "From your Closet",
+                                _getSourceText(),
                                 style: GoogleFonts.libreFranklin(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -234,7 +262,6 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
                         // PageView for sliding images
                         Container(
-                          // need to adjust the height ... best 0.61
                           height: dh * 0.55,
                           child: PageView.builder(
                             controller: _pageController,
@@ -243,9 +270,9 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                 _currentIndex = index;
                               });
                             },
-                            itemCount: _generatedResponse!.results.length,
+                            itemCount: _totalItems,
                             itemBuilder: (context, index) {
-                              final look = _generatedResponse!.results[index];
+                              String imageData = _getImageData(index);
                               return Column(
                                 children: [
                                   Expanded(
@@ -258,7 +285,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(16),
                                         child: _buildBase64Image(
-                                          look.image,
+                                          imageData,
                                           fit: BoxFit.contain,
                                         ),
                                       ),
@@ -281,17 +308,18 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                         ),
 
                         // Dot Indicator
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              _generatedResponse!.results.length,
-                              (index) =>
-                                  _buildDotIndicator(index == _currentIndex),
+                        if (_totalItems > 1)
+                          Container(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(
+                                _totalItems,
+                                (index) =>
+                                    _buildDotIndicator(index == _currentIndex),
+                              ),
                             ),
                           ),
-                        ),
 
                         //Personalized recommendations
                         Container(
@@ -349,7 +377,6 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                               SizedBox(height: 16),
 
                               // Product Grid
-                              // Recommendation Cards
                               GridView.count(
                                 shrinkWrap: true,
                                 physics: NeverScrollableScrollPhysics(),
@@ -410,6 +437,72 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     );
   }
 
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            SizedBox(height: 16),
+            Text(
+              _errorMessage ?? 'Failed to generate looks',
+              style: GoogleFonts.libreFranklin(
+                color: Colors.red,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                _initializeData();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.textPrimary,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Retry',
+                style: GoogleFonts.libreFranklin(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getSourceText() {
+    if (_generatedResponse != null &&
+        _currentIndex < _generatedResponse!.results.length) {
+      return _generatedResponse!.results[_currentIndex].type.toLowerCase() ==
+              'wardrobe'
+          ? "From your Closet"
+          : "From Ask Zuri";
+    }
+    return "From your Closet";
+  }
+
+  String _getImageData(int index) {
+    if (_generatedResponse != null &&
+        index < _generatedResponse!.results.length) {
+      return _generatedResponse!.results[index].image;
+    } else if (_recommendationResponse != null &&
+        index < _recommendationResponse!.results.length) {
+      return _recommendationResponse!.results[index].imageB64!;
+    }
+    return '';
+  }
+
   Widget _buildDotIndicator(bool isActive) {
     return AnimatedContainer(
       duration: Duration(milliseconds: 300),
@@ -429,6 +522,25 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     double? width,
     double? height,
   }) {
+    if (base64String.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        color: Color(0xFFFFD6D5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_not_supported, size: 60, color: Color(0xFF8D6E63)),
+            SizedBox(height: 12),
+            Text(
+              'No image available',
+              style: TextStyle(color: Color(0xFF5D4037), fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+
     try {
       // Remove data:image/jpeg;base64, prefix if present
       String cleanBase64 = base64String;
@@ -491,7 +603,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     double dh,
   ) {
     return Container(
-      height: 300, // Fixed height instead of Expanded
+      height: 300,
       color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

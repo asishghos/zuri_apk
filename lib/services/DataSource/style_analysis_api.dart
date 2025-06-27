@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:testing2/services/Class/style_analyze_model.dart';
+import 'package:testing2/services/DataSource/auth_api.dart';
 import 'package:testing2/services/api_routes.dart';
 
 class StyleAnalyzeApiService {
@@ -19,6 +20,10 @@ class StyleAnalyzeApiService {
       Developer.log("MIME type: $mimeType");
 
       var request = http.MultipartRequest('POST', uri);
+      final headers = await AuthApiService.getHeaders(includeAuth: true);
+      if (headers.containsKey('Authorization')) {
+        request.headers['Authorization'] = headers['Authorization']!;
+      }
       request.files.add(
         await http.MultipartFile.fromPath(
           'image',
@@ -64,7 +69,7 @@ class StyleAnalyzeApiService {
 
       final response = await http.post(
         uri,
-        headers: {'Content-Type': 'application/json'},
+        headers: await AuthApiService.getHeaders(includeAuth: true),
         body: jsonEncode({"body_shape": body_shape, "skin_tone": skin_tone}),
       );
 

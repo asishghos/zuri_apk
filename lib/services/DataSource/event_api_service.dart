@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:developer' as Developer;
 import 'package:http/http.dart' as http;
 import 'package:testing2/services/Class/event_model.dart';
-import 'package:testing2/services/Class/EventsModel/update_event_model.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
 import 'package:testing2/services/api_routes.dart';
 
@@ -12,11 +11,9 @@ class EventApiService {
   static Future<EventResponse> addEvent(EventRequest eventRequest) async {
     try {
       final url = Uri.parse(ApiRoutes.addEvent);
-      final headers = AuthApiService.getHeaders();
       final body = json.encode(eventRequest.toJson());
 
       Developer.log('Request URL: $url');
-      Developer.log('Request Headers: $headers');
       Developer.log('Request Body: $body');
 
       final response = await http.post(

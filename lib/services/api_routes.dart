@@ -1,6 +1,6 @@
 class ApiRoutes {
   // Base url
-  static const String baseUrl = 'https://3e7a-223-185-28-250.ngrok-free.app';
+  static const String baseUrl = 'https://4793-223-185-28-250.ngrok-free.app';
 
   // Style Analyze routes
   static const String manualAnalyze = '${baseUrl}/api/analyze/manual';

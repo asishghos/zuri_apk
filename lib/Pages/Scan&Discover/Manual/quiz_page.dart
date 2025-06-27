@@ -5,10 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
-import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
-import 'package:testing2/services/DataSource/style_analysis_api.dart';
+import 'package:testing2/services/Temp/TempUserDataStore.dart';
 
 class QuizPage extends StatefulWidget {
   final String body_shape;
@@ -154,51 +153,62 @@ class _QuizPageState extends State<QuizPage> {
                     child: ElevatedButton(
                       onPressed: selectedIndex != null
                           ? () async {
-                              setState(() {
-                                _isLoading = true;
-                              });
-                              tone = selectedIndex == 0
-                                  ? "warm"
-                                  : selectedIndex == 1
-                                  ? "cool"
-                                  : "neutral";
-                              try {
-                                final response =
-                                    await StyleAnalyzeApiService.manualAanalyzeservice(
-                                      widget.body_shape,
-                                      tone,
-                                    );
-                                final isLoggedIn =
-                                    await AuthApiService.isLoggedIn();
-                                await prefs.setString(
-                                  "bodyShape",
-                                  response!.bodyShapeResult?.bodyShape ?? '',
-                                );
-                                await prefs.setString(
-                                  "skinTone",
-                                  response.bodyShapeResult?.skinTone ?? '',
-                                );
-                                if (isLoggedIn) {
-                                  context.goNamed(
-                                    'styleAnalyze',
-                                    queryParameters: {},
-                                  );
-                                } else {
-                                  context.goNamed('signup');
-                                }
-                                if (!mounted) return;
-                                setState(() {
-                                  _isLoading = false;
-                                });
-                              } catch (e) {
-                                setState(() {
-                                  _isLoading = false;
-                                });
-                                showErrorSnackBar(
-                                  context,
-                                  "Something went wrong: $e",
-                                );
-                              }
+                              await TempUserDataStore().save(
+                                bodyShape: widget.body_shape,
+                                skinTone: selectedIndex == 0
+                                    ? "warm"
+                                    : selectedIndex == 1
+                                    ? "cool"
+                                    : "neutral",
+                              );
+                              context.goNamed('signup');
+                              // setState(() {
+                              //   _isLoading = true;
+                              // });
+                              // tone = selectedIndex == 0
+                              //     ? "warm"
+                              //     : selectedIndex == 1
+                              //     ? "cool"
+                              //     : "neutral";
+                              // try {
+                              //   final response =
+                              //       await StyleAnalyzeApiService.manualAanalyzeservice(
+                              //         widget.body_shape,
+                              //         tone,
+                              //       );
+                              //   await prefs.setString(
+                              //     "bodyShape",
+                              //     response!.bodyShapeResult?.bodyShape ?? '',
+                              //   );
+                              //   await prefs.setString(
+                              //     "skinTone",
+                              //     response.bodyShapeResult?.skinTone ?? '',
+                              //   );
+                              //   context.goNamed('signup');
+                              //   // final isLoggedIn =
+                              //   //     await AuthApiService.isLoggedIn();
+
+                              //   // if (isLoggedIn) {
+                              //   //   context.goNamed(
+                              //   //     'styleAnalyze',
+                              //   //     queryParameters: {},
+                              //   //   );
+                              //   // } else {
+                              //   //   context.goNamed('signup');
+                              //   // }
+                              //   if (!mounted) return;
+                              //   setState(() {
+                              //     _isLoading = false;
+                              //   });
+                              // } catch (e) {
+                              //   setState(() {
+                              //     _isLoading = false;
+                              //   });
+                              //   showErrorSnackBar(
+                              //     context,
+                              //     "Something went wrong: $e",
+                              //   );
+                              // }
                             }
                           : null,
 

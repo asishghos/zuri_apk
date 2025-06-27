@@ -27,6 +27,9 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
   File? _footwearImage;
   File? _accessoriesimage;
   final TextEditingController _occasionController = TextEditingController();
+  // Initialize the images list
+  late List<File> images = []; // Add = [] here
+  late String occasion;
 
   // Simulate different states for demo
   int currentState = 0; // 0: initial, 1: one item uploaded, 2: ready to style
@@ -181,6 +184,8 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
               return;
             }
 
+            images.add(imageFile);
+
             setState(() {
               _topsImage = imageFile;
               hasTopUploaded = true;
@@ -204,7 +209,7 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
               Developer.log('Unexpected result type: ${result.runtimeType}');
               return;
             }
-
+            images.add(imageFile);
             setState(() {
               _bottomsImage = imageFile;
               hasBottomUploaded = true; // Fixed: was hasTopUploaded
@@ -228,7 +233,7 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
               Developer.log('Unexpected result type: ${result.runtimeType}');
               return;
             }
-
+            images.add(imageFile);
             setState(() {
               _footwearImage = imageFile;
               hasFootwearUploaded = true; // Fixed: was hasTopUploaded
@@ -252,6 +257,7 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
               Developer.log('Unexpected result type: ${result.runtimeType}');
               return;
             }
+            images.add(imageFile);
 
             setState(() {
               _accessoriesimage = imageFile;
@@ -428,15 +434,19 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
 
     return GlobalPinkButton(
       text: _getButtonText(),
-      onPressed: () {
-        hasAnyItem
-            ? () {
-                setState(() {
-                  currentState = 2;
-                });
-              }
-            : null;
-      },
+      onPressed: hasAnyItem
+          ? () {
+              context.goNamed(
+                'createOutfit',
+                queryParameters: {
+                  "occasion": _occasionController.text,
+                  "imagePaths": images
+                      .map((file) => file.path)
+                      .join(','), // Convert to comma-separated paths
+                },
+              );
+            }
+          : () {},
       backgroundColor: hasAnyItem ? Color(0xFFE25C7E) : Color(0xFFE5E7EA),
       foregroundColor: hasAnyItem ? Colors.white : Color(0xFF9EA2AE),
     );

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:testing2/services/DataSource/image_check_api.dart';
 
 class ImagePickerService {
   final ImagePicker _picker = ImagePicker();
@@ -83,16 +82,7 @@ class ImagePickerService {
       if (pickedFile != null) {
         File imageFile = File(pickedFile.path);
         onStartLoading();
-
-        final response = await ApiService4.imageCheckService(imageFile);
-
         onStopLoading();
-
-        if (response != null && response.isFullBody) {
-          onValidImagePicked(imageFile);
-        } else {
-          onInvalidImage();
-        }
       }
     } catch (e) {
       onStopLoading();

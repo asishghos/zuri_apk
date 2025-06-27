@@ -15,7 +15,6 @@ class GenerateLookService {
   ) async {
     try {
       final uri = Uri.parse('${ApiRoutes.getStyledOutfits}?occasion=$occasion');
-
       final response = await http.post(
         uri,
         headers: await AuthApiService.getHeaders(includeAuth: true),
@@ -34,48 +33,52 @@ class GenerateLookService {
     }
   }
 
-  static Future<StyleRecommendationResponse?> uploadAndGetRecommendation({
-    required List<File> imageFiles,
+  static Future<StyledOutfitResponse?> getStyleRecommender({
+    required List<File> images,
     required String occasion,
+    String? description,
   }) async {
     try {
       final uri = Uri.parse(ApiRoutes.getStyleRecommender);
-
       final request = http.MultipartRequest('POST', uri);
       final headers = await AuthApiService.getHeaders(includeAuth: true);
       if (headers.containsKey('Authorization')) {
         request.headers['Authorization'] = headers['Authorization']!;
       }
+      // Add fields
+      request.fields['occasion'] = occasion;
+      if (description != null && description.trim().isNotEmpty) {
+        request.fields['description'] = description;
+      }
 
-      for (File file in imageFiles) {
-        final mimeType = lookupMimeType(file.path);
+      // Add image files
+      for (var imageFile in images) {
+        final mimeType = lookupMimeType(imageFile.path);
         if (mimeType == null || !mimeType.contains('/')) {
-          Developer.log("❌ Invalid MIME type for file: ${file.path}");
-          return null;
+          Developer.log("❌ Invalid MIME type for: ${imageFile.path}");
+          continue;
         }
         final mimeParts = mimeType.split('/');
-
-        final multipartFile = await http.MultipartFile.fromPath(
-          'images', // field name in backend
-          file.path,
-          contentType: MediaType(mimeParts[0], mimeParts[1]),
-          // contentType: MediaType.parse(mimeType),
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'images',
+            imageFile.path,
+            contentType: MediaType(mimeParts[0], mimeParts[1]),
+          ),
         );
-        request.files.add(multipartFile);
       }
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-
       if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        return StyleRecommendationResponse.fromJson(jsonData);
+        final decoded = jsonDecode(response.body);
+        return StyledOutfitResponse.fromJson(decoded);
       } else {
-        print("❌ Error: ${response.statusCode} ${response.body}");
+        Developer.log("❌ Error: ${response.statusCode} ${response.body}");
         return null;
       }
     } catch (e) {
-      print("❌ Exception: $e");
+      Developer.log("❌ Exception in recommendStyle: $e");
       return null;
     }
   }

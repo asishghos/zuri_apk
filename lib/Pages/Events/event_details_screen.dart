@@ -248,7 +248,33 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
               SizedBox(width: 24),
             ],
             GestureDetector(
-              onTap: () => _showDeleteConfirmation(),
+              onTap: () => showGlobalDeleteConfirmationDialog(
+                context: context,
+                title: 'Delete Event',
+                content:
+                    'Are you sure you want to delete "${eventDataResult.event.title}"? This action cannot be undone.',
+                onConfirm: () async {
+                  if (eventDataResult.event.isMultiDay) {
+                    if (eventDataResult.event.daySpecificData.length > 1) {
+                      await deleteDayEvent(
+                        eventDataResult.event.id,
+                        widget
+                            .eventData
+                            .event
+                            .daySpecificData[widget.index ?? 0]
+                            .id,
+                      );
+                    } else {
+                      await deleteEntireEvent(eventDataResult.event.id);
+                    }
+                  } else {
+                    await deleteEntireEvent(eventDataResult.event.id);
+                  }
+
+                  widget.onEventDeleted?.call();
+                  showSuccessSnackBar(context, "Event deleted successfully");
+                },
+              ),
               child: HugeIcon(
                 icon: HugeIcons.strokeRoundedDelete03,
                 size: 16,
@@ -366,97 +392,97 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     });
   }
 
-  void _showDeleteConfirmation() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(32),
-          ),
-          title: Text(
-            'Delete Event',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF131927),
-            ),
-          ),
-          content: Text(
-            'Are you sure you want to delete "${eventDataResult.event.title}"? This action cannot be undone.',
-            style: GoogleFonts.libreFranklin(
-              fontSize: 14,
-              color: Color(0xFF394050),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-              },
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.libreFranklin(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF394050),
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  if (eventDataResult.event.isMultiDay) {
-                    if (eventDataResult.event.daySpecificData.length > 1) {
-                      // If there are multiple days, delete only the specific day
-                      await deleteDayEvent(
-                        eventDataResult.event.id,
-                        widget
-                            .eventData
-                            .event
-                            .daySpecificData[widget.index ?? 0]
-                            .id,
-                      );
-                      // context.pop();
-                    } else {
-                      await deleteEntireEvent(eventDataResult.event.id);
-                      // context.pop();
-                      // context.pop();
-                    }
-                  } else {
-                    await deleteEntireEvent(eventDataResult.event.id);
-                    // context.pop();
-                    // context.pop();
-                  }
-                  widget.onEventDeleted?.call();
-                  showSuccessSnackBar(context, "Event deleted successfully");
-                } catch (e) {
-                  Navigator.pop(context); // Close dialog
-                  showErrorSnackBar(context, "Failed to delete event: $e");
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFFF5236),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Delete',
-                style: GoogleFonts.libreFranklin(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  // void _showDeleteConfirmation() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         backgroundColor: Colors.white,
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(32),
+  //         ),
+  //         title: Text(
+  //           'Delete Event',
+  //           style: GoogleFonts.inter(
+  //             fontSize: 18,
+  //             fontWeight: FontWeight.w600,
+  //             color: Color(0xFF131927),
+  //           ),
+  //         ),
+  //         content: Text(
+  //           'Are you sure you want to delete "${eventDataResult.event.title}"? This action cannot be undone.',
+  //           style: GoogleFonts.libreFranklin(
+  //             fontSize: 14,
+  //             color: Color(0xFF394050),
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop(); // Close dialog
+  //             },
+  //             child: Text(
+  //               'Cancel',
+  //               style: GoogleFonts.libreFranklin(
+  //                 fontSize: 14,
+  //                 fontWeight: FontWeight.w500,
+  //                 color: Color(0xFF394050),
+  //               ),
+  //             ),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () async {
+  //               try {
+  //                 if (eventDataResult.event.isMultiDay) {
+  //                   if (eventDataResult.event.daySpecificData.length > 1) {
+  //                     // If there are multiple days, delete only the specific day
+  //                     await deleteDayEvent(
+  //                       eventDataResult.event.id,
+  //                       widget
+  //                           .eventData
+  //                           .event
+  //                           .daySpecificData[widget.index ?? 0]
+  //                           .id,
+  //                     );
+  //                     // context.pop();
+  //                   } else {
+  //                     await deleteEntireEvent(eventDataResult.event.id);
+  //                     // context.pop();
+  //                     // context.pop();
+  //                   }
+  //                 } else {
+  //                   await deleteEntireEvent(eventDataResult.event.id);
+  //                   // context.pop();
+  //                   // context.pop();
+  //                 }
+  //                 widget.onEventDeleted?.call();
+  //                 showSuccessSnackBar(context, "Event deleted successfully");
+  //               } catch (e) {
+  //                 Navigator.pop(context); // Close dialog
+  //                 showErrorSnackBar(context, "Failed to delete event: $e");
+  //               }
+  //             },
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: Color(0xFFFF5236),
+  //               foregroundColor: Colors.white,
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(32),
+  //               ),
+  //               elevation: 0,
+  //             ),
+  //             child: Text(
+  //               'Delete',
+  //               style: GoogleFonts.libreFranklin(
+  //                 fontSize: 14,
+  //                 fontWeight: FontWeight.w600,
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _buildDescriptionSection() {
     String description =

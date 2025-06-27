@@ -9,12 +9,7 @@ Future<void> main() async {
   // await dotenv.load(fileName: ".env");
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await prefs.remove('alreadyUsed');
-  // SystemChrome.setSystemUIOverlayStyle(
-  //   const SystemUiOverlayStyle(
-  //     statusBarColor: Colors.transparent, // ← this is actual black background
-  //     statusBarIconBrightness: Brightness.dark, // white icons
-  //   ),
-  // );
+  await prefs.remove('isFirstTime');
   runApp(MyApp());
 }
 

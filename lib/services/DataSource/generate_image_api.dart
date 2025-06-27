@@ -1,70 +1,70 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:developer' as Developer;
-import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
-import 'package:mime/mime.dart';
-import 'package:testing2/services/Class/generate_image_model.dart';
-import 'package:testing2/services/api_routes.dart';
+// import 'dart:convert';
+// import 'dart:io';
+// import 'dart:developer' as Developer;
+// import 'package:http/http.dart' as http;
+// import 'package:http_parser/http_parser.dart';
+// import 'package:mime/mime.dart';
+// import 'package:testing2/services/Class/generate_image_model.dart';
+// import 'package:testing2/services/api_routes.dart';
 
-class ApiService3 {
-  static Future<GenerateImageClass?> generateImageService(
-    File imageFile,
-    String bodyPart,
-    String occasion,
-  ) async {
-    Developer.log("🔍 Starting generateImageService...");
+// class ApiService3 {
+//   static Future<GenerateImageClass?> generateImageService(
+//     File imageFile,
+//     String bodyPart,
+//     String occasion,
+//   ) async {
+//     Developer.log("🔍 Starting generateImageService...");
 
-    try {
-      final uri = Uri.parse(ApiRoutes.generateImageOcassionWise);
-      Developer.log("🌐 API URL: $uri");
+//     try {
+//       final uri = Uri.parse(ApiRoutes.generateImageOcassionWise);
+//       Developer.log("🌐 API URL: $uri");
 
-      final mimeType = lookupMimeType(imageFile.path);
-      if (mimeType == null || !mimeType.contains('/')) {
-        Developer.log("❌ Invalid MIME type for file: ${imageFile.path}");
-        return null;
-      }
+//       final mimeType = lookupMimeType(imageFile.path);
+//       if (mimeType == null || !mimeType.contains('/')) {
+//         Developer.log("❌ Invalid MIME type for file: ${imageFile.path}");
+//         return null;
+//       }
 
-      final mimeParts = mimeType.split('/');
-      final request = http.MultipartRequest('POST', uri);
+//       final mimeParts = mimeType.split('/');
+//       final request = http.MultipartRequest('POST', uri);
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          "image",
-          imageFile.path,
-          contentType: MediaType(mimeParts[0], mimeParts[1]),
-        ),
-      );
+//       request.files.add(
+//         await http.MultipartFile.fromPath(
+//           "image",
+//           imageFile.path,
+//           contentType: MediaType(mimeParts[0], mimeParts[1]),
+//         ),
+//       );
 
-      request.fields["bodyPart"] = bodyPart;
-      request.fields["occasion"] = occasion;
-      Developer.log("📦 Choose occasion field: $occasion");
-      Developer.log("📦 Choose Top/Buttom -wear field: $bodyPart");
+//       request.fields["bodyPart"] = bodyPart;
+//       request.fields["occasion"] = occasion;
+//       Developer.log("📦 Choose occasion field: $occasion");
+//       Developer.log("📦 Choose Top/Buttom -wear field: $bodyPart");
 
-      Developer.log("📤 Sending request to generate Image API...");
-      final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
-      // Developer.log("📥 Response received: $responseBody");
+//       Developer.log("📤 Sending request to generate Image API...");
+//       final response = await request.send();
+//       final responseBody = await response.stream.bytesToString();
+//       // Developer.log("📥 Response received: $responseBody");
 
-      if (response.statusCode == 200) {
-        try {
-          final decoded = jsonDecode(responseBody);
-          Developer.log("✅ Decoded JSON successfully.");
-          return GenerateImageClass.fromJson(decoded);
-        } catch (jsonError) {
-          Developer.log("❌ JSON decoding error: $jsonError");
-          return null;
-        }
-      } else {
-        Developer.log(
-          "❗Server responded with error ${response.statusCode}: $responseBody",
-        );
-        return null;
-      }
-    } catch (e, stacktrace) {
-      Developer.log("❌ Exception during hybridAnalyze API call: $e");
-      Developer.log("🪵 Stacktrace: $stacktrace");
-      return null;
-    }
-  }
-}
+//       if (response.statusCode == 200) {
+//         try {
+//           final decoded = jsonDecode(responseBody);
+//           Developer.log("✅ Decoded JSON successfully.");
+//           return GenerateImageClass.fromJson(decoded);
+//         } catch (jsonError) {
+//           Developer.log("❌ JSON decoding error: $jsonError");
+//           return null;
+//         }
+//       } else {
+//         Developer.log(
+//           "❗Server responded with error ${response.statusCode}: $responseBody",
+//         );
+//         return null;
+//       }
+//     } catch (e, stacktrace) {
+//       Developer.log("❌ Exception during hybridAnalyze API call: $e");
+//       Developer.log("🪵 Stacktrace: $stacktrace");
+//       return null;
+//     }
+//   }
+// }

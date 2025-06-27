@@ -262,14 +262,30 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
                       // Log out
                       GestureDetector(
                         onTap: () async {
-                          final result = await AuthApiService.logoutUser();
-                          if (result['success']) {
-                            context.goNamed('home');
-                          } else {
-                            // Show error message or still navigate to login
-                            // since local tokens were cleared anyway
-                            context.goNamed('login');
-                          }
+                          showGlobalDeleteConfirmationDialog(
+                            context: context,
+                            title: "confirm",
+                            content: "Are you sure?",
+                            onConfirm: () async {
+                              final result = await AuthApiService.logoutUser();
+                              if (result['success']) {
+                                context.goNamed('home');
+                              } else {
+                                // Show error message or still navigate to login
+                                // since local tokens were cleared anyway
+                                context.goNamed('login');
+                              }
+                              return;
+                            },
+                          );
+                          // final result = await AuthApiService.logoutUser();
+                          // if (result['success']) {
+                          //   context.goNamed('home');
+                          // } else {
+                          //   // Show error message or still navigate to login
+                          //   // since local tokens were cleared anyway
+                          //   context.goNamed('login');
+                          // }
                         },
                         child: Row(
                           children: [

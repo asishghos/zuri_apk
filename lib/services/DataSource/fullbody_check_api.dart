@@ -4,11 +4,13 @@ import 'dart:developer' as Developer;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
-import 'package:testing2/services/Class/image_check_model.dart';
+import 'package:testing2/services/Class/fullbody_check_model.dart';
 import 'package:testing2/services/api_routes.dart';
 
-class ApiService4 {
-  static Future<ImageCheckClass?> imageCheckService(File imageFile) async {
+class FullbodyImageCheckApiServices {
+  static Future<ImageCheckClass?> fullbodyImageCheckApiServices(
+    File imageFile,
+  ) async {
     Developer.log("🔍 Starting generateImageService...");
     try {
       final uri = Uri.parse(ApiRoutes.imageCheck);

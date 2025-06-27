@@ -135,31 +135,17 @@ class _HomeScreen2State extends State<HomeScreen2> {
       _isLoading = true;
     });
     try {
-      final result = await ApiService3.generateImageService(
-        _imageFile!,
-        _selectedClothingType!,
-        _selectedOccasion!,
-      );
+      // final result = await ApiService3.generateImageService(
+      //   _imageFile!,
+      //   _selectedClothingType!,
+      //   _selectedOccasion!,
+      // );
       // ResultCache.resultData = result;
-      print(result);
+      // print(result);
       if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
-      if (result != null) {
-        context.goNamed(
-          "imageDisplay",
-          extra: ImageDisplayClass(
-            result: result,
-            clothingType: _selectedClothingType!,
-            occasion: _selectedOccasion!,
-            originalImage: _imageFile!,
-          ),
-        );
-      } else {
-        _showSnackBar("Success to generate image", Colors.redAccent);
-        Developer.log("Success to generate image");
-      }
     } catch (e) {
       setState(() {
         _isLoading = false;
