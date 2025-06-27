@@ -1,0 +1,30 @@
+prefs.remove('alreadyUsed'); // during development
+
+Your requirement:
+First-time user → go to 'onboarding'
+Not first-time + not logged in → go to 'home'
+Not first-time + logged in → go to 'home2'
+
+
+// need to improve the crop option ui ------>>>>>>>>>>>
+
+
+// Home2 folder Un-used haii
+
+
+
+import 'package:shared_preferences/shared_preferences.dart';
+Future<void> initPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+  }
+
+
+
+
+  Navigator route page:
+1.  C:\Users\asish ghosh\OneDrive\Desktop\flutterapps\Zuri\zuri\lib\Pages\Wardrobe\image_preview_page.dart
+
+
+
+
+// Discount in geen in product card ....

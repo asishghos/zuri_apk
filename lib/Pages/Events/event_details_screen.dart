@@ -1,0 +1,591 @@
+// import 'dart:convert';
+
+import 'dart:developer' as Developer;
+
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:testing2/Global/Widget/global_widget.dart';
+import 'package:testing2/Pages/Events/add_or_edit_event_overlay.dart';
+import 'package:testing2/services/Class/event_model.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:testing2/services/DataSource/event_api_service.dart';
+
+class EventDetailsPage extends StatefulWidget {
+  final EventResponse eventData;
+  final int? index;
+  final VoidCallback? onEventDeleted;
+  final VoidCallback? onEventUpdated;
+  final bool? timeToRefresh;
+  const EventDetailsPage({
+    Key? key,
+    required this.eventData,
+    this.index,
+    this.onEventDeleted,
+    this.onEventUpdated,
+    this.timeToRefresh,
+  }) : super(key: key);
+
+  @override
+  State<EventDetailsPage> createState() => _EventDetailsPageState();
+}
+
+class _EventDetailsPageState extends State<EventDetailsPage> {
+  late EventResponse eventDataResult;
+
+  Future<void> _refreshEventData() async {
+    setState(() {
+      // For now, just trigger a rebuild. Replace this with actual refresh logic.
+      eventDataResult = widget.eventData;
+    });
+    // Optionally, call widget.onEventUpdated?.call();
+    widget.onEventUpdated?.call();
+  }
+
+  Future<void> deleteEntireEvent(String eventId) async {
+    try {
+      final result = await EventApiService.deleteEvent(eventId: eventId);
+      Developer.log('✅ ${result['message']}');
+    } catch (e) {
+      Developer.log('❌ Error deleting event: $e');
+      rethrow; // Rethrow to handle in _showDeleteConfirmation
+    }
+  }
+
+  Future<void> deleteDayEvent(String eventId, String dayEventId) async {
+    try {
+      final result = await EventApiService.deleteEvent(
+        eventId: eventId,
+        dayEventId: dayEventId,
+      );
+      Developer.log('✅ ${result['message']}');
+    } catch (e) {
+      Developer.log('❌ Error deleting day event: $e');
+      rethrow; // Rethrow to handle in _showDeleteConfirmation
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    eventDataResult = widget.eventData;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.95,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        children: [
+          // Drag handle
+          Container(
+            margin: EdgeInsets.only(top: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'View Details',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF394050),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    padding: EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Color(0xFF141B34), width: 1.5),
+                    ),
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedCancel01,
+                      size: 16,
+                      color: Color(0xFF141B34),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Add this horizontal line
+          Container(
+            height: 1.5,
+            margin: EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(color: Color(0xFF9EA2AE)),
+          ),
+
+          // Content
+          Expanded(
+            child: Column(
+              children: [
+                // Scrollable content
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      bottom: 16,
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Event Header
+                        _buildEventHeader(),
+
+                        SizedBox(height: 24),
+
+                        // Description Section
+                        _buildDescriptionSection(),
+
+                        SizedBox(height: 24),
+
+                        _buildStyledLookSection(),
+
+                        SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Action Button (Fixed at bottom)
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: 16,
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                  ),
+                  child: _buildActionButton(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEventHeader() {
+    final data = eventDataResult.event;
+    String eventName = data.title;
+    // Fix: Handle both single-day and multi-day events properly
+    String eventTitle;
+    if (data.isMultiDay) {
+      eventTitle = data.daySpecificData[widget.index ?? 0].eventName;
+    } else {
+      eventTitle = data.title;
+    }
+
+    String eventDate = (data.isMultiDay)
+        ? formatDate(data.daySpecificData[widget.index ?? 0].date)
+        : formatDate(data.startDate);
+    String eventTime = (data.isMultiDay)
+        ? (eventDataResult.event.daySpecificData[widget.index ?? 0].eventTime
+              .toString())
+        : (data.singleDayDetails?.eventTime?.toString() ?? '');
+    String eventLocation =
+        data.singleDayDetails?.location ??
+        data.daySpecificData[widget.index ?? 0].location;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Event name with icons
+        Row(
+          children: [
+            // Show eventTitle (John's Wedding)
+            Flexible(
+              child: Text(
+                eventTitle,
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF131927),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            SizedBox(width: 24),
+            // Conditionally show event name (Wedding) with pink background
+            if (eventDataResult.event.isMultiDay) ...[
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Color(0xFFE25C7E),
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                child: Text(
+                  eventName, // This will show "Wedding"
+                  style: GoogleFonts.libreFranklin(
+                    fontSize: 12,
+                    letterSpacing: -0.01 * 12,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFFF9FAFB),
+                  ),
+                ),
+              ),
+              SizedBox(width: 24),
+            ],
+            GestureDetector(
+              onTap: () => _showDeleteConfirmation(),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedDelete03,
+                size: 16,
+                color: Color(0xFFFF5236),
+              ),
+            ),
+            SizedBox(width: 24),
+            GestureDetector(
+              onTap: () => _openEditEvent(),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedEdit01,
+                size: 16,
+                color: Color(0xFF141B34),
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: 8),
+        // Date, time and location on same line
+        Row(
+          children: [
+            // Date and time
+            Expanded(
+              flex: 2,
+              child: Text(
+                eventDate,
+                style: GoogleFonts.libreFranklin(
+                  fontSize: 12,
+                  color: Color(0xFF394050),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(
+                eventTime,
+                style: GoogleFonts.libreFranklin(
+                  fontSize: 12,
+                  color: Color(0xFF394050),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            // Location
+            Expanded(
+              flex: 3,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  HugeIcon(
+                    icon: HugeIcons.strokeRoundedLocation01,
+                    size: 12,
+                    color: Color(0xFF394050),
+                  ),
+                  SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      eventLocation,
+                      style: GoogleFonts.libreFranklin(
+                        fontSize: 12,
+                        color: Color(0xFF394050),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // Add these new methods to your _EventDetailsPageState class:
+
+  void _openEditEvent() {
+    showModalBottomSheet<bool>(
+      // Changed to return bool
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.95,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(32),
+            topRight: Radius.circular(32),
+          ),
+        ),
+        child: AddEventOverlay(
+          isEditMode: true,
+          eventData: eventDataResult,
+          onEventUpdated: () {
+            // Only keep one callback - this is called when update is successful
+            Developer.log("Event updated successfully");
+          },
+          onEventUpdatedCallBack: (updatedEventData) {
+            setState(() {
+              eventDataResult = updatedEventData;
+            });
+            _refreshEventData();
+          },
+          // Remove onSave callback to avoid conflicts
+        ),
+      ),
+    ).then((result) {
+      // Only refresh if the event was actually updated
+      if (result == true) {
+        Developer.log("Edit event modal closed with success - refreshing data");
+        _refreshEventData();
+      }
+    });
+  }
+
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(32),
+          ),
+          title: Text(
+            'Delete Event',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF131927),
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete "${eventDataResult.event.title}"? This action cannot be undone.',
+            style: GoogleFonts.libreFranklin(
+              fontSize: 14,
+              color: Color(0xFF394050),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.libreFranklin(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF394050),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  if (eventDataResult.event.isMultiDay) {
+                    if (eventDataResult.event.daySpecificData.length > 1) {
+                      // If there are multiple days, delete only the specific day
+                      await deleteDayEvent(
+                        eventDataResult.event.id,
+                        widget
+                            .eventData
+                            .event
+                            .daySpecificData[widget.index ?? 0]
+                            .id,
+                      );
+                      // context.pop();
+                    } else {
+                      await deleteEntireEvent(eventDataResult.event.id);
+                      // context.pop();
+                      // context.pop();
+                    }
+                  } else {
+                    await deleteEntireEvent(eventDataResult.event.id);
+                    // context.pop();
+                    // context.pop();
+                  }
+                  widget.onEventDeleted?.call();
+                  showSuccessSnackBar(context, "Event deleted successfully");
+                } catch (e) {
+                  Navigator.pop(context); // Close dialog
+                  showErrorSnackBar(context, "Failed to delete event: $e");
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFFF5236),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Delete',
+                style: GoogleFonts.libreFranklin(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDescriptionSection() {
+    String description =
+        eventDataResult.event.singleDayDetails?.description ??
+        eventDataResult.event.daySpecificData[widget.index ?? 0].description;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Description',
+          style: GoogleFonts.libreFranklin(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            color: Colors.black,
+          ),
+        ),
+        SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+            minHeight: 150, // Add minimum height
+          ),
+          padding: EdgeInsets.all(16), // Increase padding
+          decoration: BoxDecoration(
+            color: Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(
+              32,
+            ), // Reduce border radius for more space
+            border: Border.all(color: Color(0xFF394050), width: 1),
+          ),
+          child: Text(
+            description,
+            style: GoogleFonts.libreFranklin(
+              fontSize: 12, // Slightly larger font
+              color: Color(0xFF394050),
+              fontWeight: FontWeight.w400,
+              height: 1.6, // Increase line height
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStyledLookSection() {
+    // Fix: Safely handle empty generatedImages
+    final images = eventDataResult.event.generatedImages;
+    final hasImage = images.isNotEmpty && images[0].isNotEmpty;
+    final styledImage = hasImage ? images[0] : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Your Styled Look',
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+        SizedBox(height: 16),
+
+        // Styled look image container
+        Container(
+          width: double.infinity,
+          height: 250, // Fixed height for the styled look
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[200]!, width: 1),
+            image: styledImage != null
+                ? DecorationImage(
+                    image: NetworkImage(styledImage),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+          ),
+          child: styledImage == null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      HugeIcon(
+                        icon: HugeIcons.strokeRoundedImage01,
+                        size: 48,
+                        color: Colors.grey[400]!,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Your styled look will appear here',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton() {
+    return Container(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () {
+          print('Turn My Closet into a Look tapped');
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFFE25C7E),
+          foregroundColor: Color(0xFfF9FAFB),
+          padding: EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(32),
+          ),
+          elevation: 0,
+        ),
+        child: Text(
+          'Turn My Closet into a Look',
+          style: GoogleFonts.libreFranklin(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
