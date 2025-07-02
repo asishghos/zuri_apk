@@ -5,16 +5,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
-import 'package:testing2/services/Class/style_analyze_model.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
-import 'package:testing2/services/DataSource/style_analysis_api.dart';
-import 'package:testing2/services/Temp/TempUserDataStore.dart';
 
 class LoginPage extends StatefulWidget {
+  final String fromPage;
+
+  const LoginPage({super.key, required this.fromPage});
   @override
   _LoginPageState createState() => _LoginPageState();
 }
@@ -59,55 +58,58 @@ class _LoginPageState extends State<LoginPage> {
       await prefs.setString('userFullName', user['fullName']);
       await prefs.setString('userEmail', user['email']);
 
+      if (widget.fromPage == "from Before Login Profile Page") {
+        context.goNamed('home2');
+        return;
+      }
       // 1️⃣ First Time Check (still needs local flag)
       bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
       if (isFirstTime) {
         await prefs.setBool('isFirstTime', false);
-
-        try {
-          final loaded = await TempUserDataStore().load();
-          if (loaded) {
-            print(TempUserDataStore().bodyShape);
-            print(TempUserDataStore().skinTone);
-            print(TempUserDataStore().imageFile);
-            final StyleAnalyzeClass? response;
-            if (TempUserDataStore().imageFile == null) {
-              response = await StyleAnalyzeApiService.manualAanalyzeservice(
-                TempUserDataStore().bodyShape ?? '',
-                TempUserDataStore().skinTone ?? '',
-              );
-            } else {
-              response = await StyleAnalyzeApiService.autoAanalyzeservice(
-                TempUserDataStore().imageFile!,
-              );
-            }
-            await prefs.setString(
-              "bodyShape",
-              response!.bodyShapeResult?.bodyShape ?? '',
-            );
-            await prefs.setString(
-              "skinTone",
-              response.bodyShapeResult?.skinTone ?? '',
-            );
-            TempUserDataStore().clear();
-            context.goNamed(
-              'styleAnalyze',
-              queryParameters: {
-                "bodyShape": response.bodyShapeResult?.bodyShape,
-                "skinTone": response.bodyShapeResult?.skinTone,
-              },
-            );
-          } else {
-            Developer.log("Data not coming from TempUserDataStore.dart");
-            showErrorSnackBar(
-              context,
-              "Data not coming from TempUserDataStore.dart",
-            );
-          }
-        } catch (e, stack) {
-          Developer.log("StyleAnalyze error: $e\n$stack");
-          showErrorSnackBar(context, "StyleAnalyze error: $e\n$stack");
-        }
+        context.goNamed('styleAnalyze');
+        // try {
+        // final loaded = await TempUserDataStore().load();
+        // if (loaded) {
+        //   print(TempUserDataStore().bodyShape);
+        //   print(TempUserDataStore().skinTone);
+        //   print(TempUserDataStore().imageFile);
+        //   final StyleAnalyzeClass? response;
+        //   if (TempUserDataStore().imageFile == null) {
+        //     response = await StyleAnalyzeApiService.manualAanalyzeservice(
+        //       TempUserDataStore().bodyShape ?? '',
+        //       TempUserDataStore().skinTone ?? '',
+        //     );
+        //   } else {
+        //     response = await StyleAnalyzeApiService.autoAanalyzeservice(
+        //       TempUserDataStore().imageFile!,
+        //     );
+        //   }
+        //   await prefs.setString(
+        //     "bodyShape",
+        //     response!.bodyShapeResult?.bodyShape ?? '',
+        //   );
+        //   await prefs.setString(
+        //     "skinTone",
+        //     response.bodyShapeResult?.skinTone ?? '',
+        //   );
+        //   TempUserDataStore().clear();
+        // context.goNamed('styleAnalyze');
+        // queryParameters: {
+        //   "bodyShape": response.bodyShapeResult?.bodyShape,
+        //   "skinTone": response.bodyShapeResult?.skinTone,
+        // },
+        //   );
+        // } else {
+        //   Developer.log("Data not coming from TempUserDataStore.dart");
+        //   showErrorSnackBar(
+        //     context,
+        //     "Data not coming from TempUserDataStore.dart",
+        //   );
+        // }
+        // } catch (e, stack) {
+        //   Developer.log("StyleAnalyze error: $e\n$stack");
+        //   showErrorSnackBar(context, "StyleAnalyze error: $e\n$stack");
+        // }
 
         return;
       }
@@ -307,7 +309,9 @@ class _LoginPageState extends State<LoginPage> {
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        context.goNamed('resetPassword');
+                      },
                       child: Text(
                         "Forgot Password?",
                         style: GoogleFonts.libreFranklin(
@@ -407,7 +411,7 @@ class _LoginPageState extends State<LoginPage> {
                     TextButton(
                       onPressed: () {
                         // Handle login
-                        context.goNamed('signup');
+                        context.goNamed('scan&discover');
                       },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
@@ -415,7 +419,7 @@ class _LoginPageState extends State<LoginPage> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: Text(
-                        'Register Here',
+                        'Scan Here',
                         style: GoogleFonts.libreFranklin(
                           color: Color(0xFF2563EB),
                           fontSize: 14,

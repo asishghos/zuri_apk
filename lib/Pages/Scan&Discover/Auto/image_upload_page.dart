@@ -69,7 +69,7 @@ class _AutoImageUploadPageState extends State<AutoImageUploadPage> {
               ],
             ),
           ),
-          if (_isLoading) const LoadingPage(),
+          if (_isLoading) LoadingPage(),
         ],
       ),
     );

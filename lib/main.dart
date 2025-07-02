@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart';
 import 'package:testing2/routes/app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // This line is REQUIRED before any async calls
-  // await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env");
   SharedPreferences prefs = await SharedPreferences.getInstance();
   await prefs.remove('alreadyUsed');
   await prefs.remove('isFirstTime');

@@ -236,4 +236,30 @@ class WardrobeApiService {
       throw Exception('Failed to filter garments');
     }
   }
+
+  static Future<Map<String, dynamic>?> updateGarment({
+    required String garmentId,
+    required Map<String, dynamic> updatedFields,
+  }) async {
+    final url = Uri.parse('${ApiRoutes.updateGarment}/$garmentId');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: await AuthApiService.getHeaders(includeAuth: true),
+        body: jsonEncode(updatedFields),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Map<String, dynamic>.from(data['updated']);
+      } else {
+        print("Update failed: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      print("Error updating garment: $e");
+      return null;
+    }
+  }
 }

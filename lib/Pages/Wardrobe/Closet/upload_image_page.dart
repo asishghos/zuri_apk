@@ -364,7 +364,7 @@ class _UploadInwardrobePageState extends State<UploadInwardrobePage> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Hey, babe. This closet is about to glow-up! \nUpload your outfit pics, and let me give\n you looks hotter than your morning coffee.',
+                              'Hey, babe. This closet is about to glow-up! \nUpload your outfit pics, and let me serve\n you looks hotter than your morning coffee.',
                               textAlign: TextAlign.center,
                               style: GoogleFonts.libreFranklin(
                                 color: AppColors.subTitleTextColor,

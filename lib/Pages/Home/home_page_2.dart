@@ -14,7 +14,7 @@ class HomePage2 extends StatefulWidget {
 }
 
 class _HomePage2State extends State<HomePage2> {
-  late SharedPreferences prefs;
+  SharedPreferences? prefs = null;
 
   @override
   void initState() {
@@ -52,11 +52,27 @@ class _HomePage2State extends State<HomePage2> {
                             onTap: () {
                               Scaffold.of(context).openDrawer();
                             },
-                            child: const CircleAvatar(
-                              radius: 25,
-                              backgroundImage: NetworkImage(
-                                'https://i.ibb.co/1JhhF9cm/file-2025-06-04-10-10-51.png',
-                              ),
+                            child: CircleAvatar(
+                              radius: 32,
+                              backgroundColor: Color(0xFFE5E7EA),
+                              child:
+                                  (prefs?.getString("userProfilePic") != null &&
+                                      prefs!
+                                          .getString("userProfilePic")!
+                                          .isNotEmpty)
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        prefs!.getString("userProfilePic")!,
+                                        width: 64,
+                                        height: 64,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : HugeIcon(
+                                      icon: HugeIcons.strokeRoundedUser,
+                                      color: AppColors.titleTextColor,
+                                      size: 32,
+                                    ),
                             ),
                           ),
                         ),
@@ -73,8 +89,7 @@ class _HomePage2State extends State<HomePage2> {
                               ),
                             ),
                             Text(
-                              "Surabhi",
-                              // prefs.getString('userFullName') ?? "Surabhi",
+                              prefs?.getString("userFullName") ?? "User",
                               style: GoogleFonts.libreFranklin(
                                 color: AppColors.textPrimary,
                                 fontSize: 16,

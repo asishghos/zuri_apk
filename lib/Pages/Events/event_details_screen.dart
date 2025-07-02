@@ -285,7 +285,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             GestureDetector(
               onTap: () => _openEditEvent(),
               child: HugeIcon(
-                icon: HugeIcons.strokeRoundedEdit01,
+                icon: HugeIcons.strokeRoundedEdit02,
                 size: 16,
                 color: Color(0xFF141B34),
               ),

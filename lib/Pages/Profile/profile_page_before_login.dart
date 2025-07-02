@@ -231,7 +231,10 @@ class _ProfileDrawerBeforeLoginState extends State<ProfileDrawerBeforeLogin> {
                       // Log out
                       GestureDetector(
                         onTap: () async {
-                          context.goNamed('login');
+                          context.goNamed(
+                            'login',
+                            extra: "from Before Login Profile Page",
+                          );
                         },
                         child: Row(
                           children: [

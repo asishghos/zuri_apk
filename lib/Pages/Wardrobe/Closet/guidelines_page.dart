@@ -91,7 +91,7 @@ class GuidelinesPage extends StatelessWidget {
           },
         ),
         title: Text(
-          'How to take photo of your closet',
+          'Zuri Closet Goals Start Here—Upload It All',
           style: GoogleFonts.libreFranklin(
             fontSize: 16,
             color: Color(0xFF121417),

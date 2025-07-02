@@ -8,7 +8,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
-import 'package:testing2/services/Class/result_class.dart';
 import 'package:testing2/services/DataSource/weather_api.dart';
 
 class LocationPage extends StatefulWidget {

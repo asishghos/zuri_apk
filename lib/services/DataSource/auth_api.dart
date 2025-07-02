@@ -1,7 +1,11 @@
+// ignore_for_file: unused_element
+
 import 'dart:convert';
 import 'dart:developer' as Developer;
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:testing2/services/Class/auth_model.dart';
 import 'package:testing2/services/api_routes.dart';
 
 class AuthApiService {
@@ -233,28 +237,50 @@ class AuthApiService {
     }
   }
 
-  // Get user profile
-  static Future<Map<String, dynamic>> getUserProfile() async {
+  // Get user profile - Enhanced to include closet stats and new additions
+  static Future<UserProfileResponse?> getUserProfile() async {
     try {
       final response = await http.get(
         Uri.parse(ApiRoutes.userProfile),
         headers: await getHeaders(includeAuth: true),
       );
 
-      final data = jsonDecode(response.body);
-
       if (response.statusCode == 200) {
-        return {'success': true, 'user': data['data']};
+        final jsonResponse = json.decode(response.body);
+        Developer.log(jsonEncode(jsonResponse));
+        return UserProfileResponse.fromJson(jsonResponse);
       } else {
-        return {
-          'success': false,
-          'msg': data['msg'] ?? 'Failed to get profile',
-        };
+        Developer.log("Error: From getUserProfile.. fail to fetch user data");
+        return null;
       }
     } catch (e) {
-      return {'success': false, 'msg': 'Network error: ${e.toString()}'};
+      Developer.log("Error: from getUserProfile ${e}");
+      return null;
     }
   }
+
+  // Get user full name only
+  // static Future<Map<String, dynamic>> getUserFullName() async {
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse(ApiRoutes.), // You'll need to add this route
+  //       headers: await getHeaders(includeAuth: true),
+  //     );
+
+  //     final data = jsonDecode(response.body);
+
+  //     if (response.statusCode == 200) {
+  //       return {'success': true, 'fullName': data['data']};
+  //     } else {
+  //       return {
+  //         'success': false,
+  //         'msg': data['msg'] ?? 'Failed to get user name',
+  //       };
+  //     }
+  //   } catch (e) {
+  //     return {'success': false, 'msg': 'Network error: ${e.toString()}'};
+  //   }
+  // }
 
   // Change user password
   static Future<Map<String, dynamic>> changeUserPassword({
@@ -263,7 +289,7 @@ class AuthApiService {
   }) async {
     try {
       final response = await http.patch(
-        Uri.parse(ApiRoutes.userChangePassword),
+        Uri.parse(ApiRoutes.changeUserPassword),
         headers: await getHeaders(includeAuth: true),
         body: jsonEncode({
           'oldPassword': oldPassword,
@@ -289,24 +315,47 @@ class AuthApiService {
     }
   }
 
-  // Update user profile
+  // Update user profile - Enhanced with all fields and file upload support
   static Future<Map<String, dynamic>> updateUserProfile({
     String? fullName,
     String? email,
-    String? avatar,
+    String? bodyShape,
+    String? undertone,
+    int? feet,
+    int? inches,
+    String? location,
+    File? profilePicture,
   }) async {
     try {
-      Map<String, dynamic> body = {};
-      if (fullName != null) body['fullName'] = fullName;
-      if (email != null) body['email'] = email;
-      if (avatar != null) body['avatar'] = avatar;
-
-      final response = await http.patch(
-        Uri.parse(ApiRoutes.userUpdateProfile),
-        headers: await getHeaders(includeAuth: true),
-        body: jsonEncode(body),
+      var request = http.MultipartRequest(
+        'PATCH',
+        Uri.parse(ApiRoutes.updateUserProfile),
       );
 
+      // Add headers
+      final headers = await getHeaders(includeAuth: true);
+      request.headers.addAll(headers);
+
+      // Add text fields
+      if (fullName != null) request.fields['fullName'] = fullName;
+      if (email != null) request.fields['email'] = email;
+      if (bodyShape != null) request.fields['bodyShape'] = bodyShape;
+      if (undertone != null) request.fields['undertone'] = undertone;
+      if (feet != null) request.fields['feet'] = feet.toString();
+      if (inches != null) request.fields['inches'] = inches.toString();
+      if (location != null) request.fields['location'] = location;
+
+      // Add profile picture if provided
+      if (profilePicture != null) {
+        var profilePicFile = await http.MultipartFile.fromPath(
+          'profilePicture',
+          profilePicture.path,
+        );
+        request.files.add(profilePicFile);
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
@@ -319,6 +368,101 @@ class AuthApiService {
         return {
           'success': false,
           'msg': data['msg'] ?? 'Failed to update profile',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'msg': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // Forgot password - Send recovery code to email
+  static Future<Map<String, dynamic>> forgotPassword({
+    required String email,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiRoutes.forgotPassword), // You'll need to add this route
+        headers: await getHeaders(),
+        body: jsonEncode({'email': email}),
+      );
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'msg': data['msg'] ?? 'Recovery code sent to email',
+        };
+      } else {
+        return {
+          'success': false,
+          'msg': data['msg'] ?? 'Failed to send recovery code',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'msg': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // Verify recovery code
+  static Future<Map<String, dynamic>> verifyRecoveryCode({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(
+          ApiRoutes.verifyRecoveryCode,
+        ), // You'll need to add this route
+        headers: await getHeaders(),
+        body: jsonEncode({'email': email, 'code': code}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'msg': data['msg'] ?? 'Recovery code verified',
+        };
+      } else {
+        return {
+          'success': false,
+          'msg': data['msg'] ?? 'Invalid or expired recovery code',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'msg': 'Network error: ${e.toString()}'};
+    }
+  }
+
+  // Reset password using recovery code
+  static Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiRoutes.resetPassword), // You'll need to add this route
+        headers: await getHeaders(),
+        body: jsonEncode({
+          'email': email,
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'msg': data['msg'] ?? 'Password reset successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'msg': data['msg'] ?? 'Failed to reset password',
         };
       }
     } catch (e) {
@@ -418,7 +562,7 @@ class AuthApiService {
   static Future<bool> validateToken() async {
     try {
       final profile = await getUserProfile();
-      return profile['success'] == true;
+      return profile?.msg == "User profile fetched successfully";
     } catch (e) {
       Developer.log('Error validating token: $e');
       return false;

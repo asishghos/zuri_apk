@@ -53,187 +53,183 @@ class _AffiliateLinksPageState extends State<AffiliateLinksPage> {
   Widget build(BuildContext context) {
     double dh = MediaQuery.of(context).size.height;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // Filter and Sort buttons
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      _showFilterBottomSheet(context);
-                    },
-                    icon: HugeIcon(
-                      icon: HugeIcons.strokeRoundedFilterHorizontal,
-                      color: Colors.white,
-                      size: 17,
+    return Column(
+      children: [
+        // Filter and Sort buttons
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _showFilterBottomSheet(context);
+                  },
+                  icon: HugeIcon(
+                    icon: HugeIcons.strokeRoundedFilterHorizontal,
+                    color: Colors.white,
+                    size: 17,
+                  ),
+                  label: Text(
+                    'Apply Filters',
+                    style: GoogleFonts.libreFranklin(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
                     ),
-                    label: Text(
-                      'Apply Filters',
-                      style: GoogleFonts.libreFranklin(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.textPrimary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.textPrimary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showSortBottomSheet(context),
-                    icon: SvgPicture.asset(
-                      "assets/images/affiliate/sort-by-down-01.svg",
-                    ),
-                    label: Text(
-                      'Sort by',
-                      style: GoogleFonts.libreFranklin(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.textPrimary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showSortBottomSheet(context),
+                  icon: SvgPicture.asset(
+                    "assets/images/affiliate/sort-by-down-01.svg",
+                  ),
+                  label: Text(
+                    'Sort by',
+                    style: GoogleFonts.libreFranklin(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.textPrimary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Product Grid
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            // that have to change in builder -- when integrate with api
+            child: GridView.count(
+              shrinkWrap: true,
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.60,
+              children: [
+                _buildProductCard(
+                  'assets/images/home2/h6.png',
+                  'Blue Kurta',
+                  '₹1,299',
+                  '₹363',
+                  '72%',
+                  'Amazon.in',
+                  dh,
+                ),
+                _buildProductCard(
+                  'assets/images/home2/h3.png',
+                  'Black Heels',
+                  '₹1,006',
+                  '₹503',
+                  '50%',
+                  'Myntra.com',
+                  dh,
+                ),
+                _buildProductCard(
+                  'assets/images/home2/h4.png',
+                  'Pendent',
+                  '',
+                  '₹478',
+                  '',
+                  'Nykaa.com',
+                  dh,
+                ),
+                _buildProductCard(
+                  'assets/images/home2/h5.png',
+                  'Blue Jeans',
+                  '',
+                  '₹700',
+                  '',
+                  'Amazon.in',
+                  dh,
+                ),
+                // Add more products for scrolling
+                _buildProductCard(
+                  'assets/images/home2/h4.png',
+                  'Silver Necklace',
+                  '₹800',
+                  '₹450',
+                  '44%',
+                  'Nykaa.com',
+                  dh,
+                ),
+                _buildProductCard(
+                  'assets/images/home2/h5.png',
+                  'Denim Jeans',
+                  '₹1,200',
+                  '₹850',
+                  '29%',
+                  'Myntra.com',
+                  dh,
                 ),
               ],
             ),
           ),
-
-          // Product Grid
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              // that have to change in builder -- when integrate with api
-              child: GridView.count(
-                shrinkWrap: true,
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.60,
-                children: [
-                  _buildProductCard(
-                    'assets/images/home2/h6.png',
-                    'Blue Kurta',
-                    '₹1,299',
-                    '₹363',
-                    '72%',
-                    'Amazon.in',
-                    dh,
-                  ),
-                  _buildProductCard(
-                    'assets/images/home2/h3.png',
-                    'Black Heels',
-                    '₹1,006',
-                    '₹503',
-                    '50%',
-                    'Myntra.com',
-                    dh,
-                  ),
-                  _buildProductCard(
-                    'assets/images/home2/h4.png',
-                    'Pendent',
-                    '',
-                    '₹478',
-                    '',
-                    'Nykaa.com',
-                    dh,
-                  ),
-                  _buildProductCard(
-                    'assets/images/home2/h5.png',
-                    'Blue Jeans',
-                    '',
-                    '₹700',
-                    '',
-                    'Amazon.in',
-                    dh,
-                  ),
-                  // Add more products for scrolling
-                  _buildProductCard(
-                    'assets/images/home2/h4.png',
-                    'Silver Necklace',
-                    '₹800',
-                    '₹450',
-                    '44%',
-                    'Nykaa.com',
-                    dh,
-                  ),
-                  _buildProductCard(
-                    'assets/images/home2/h5.png',
-                    'Denim Jeans',
-                    '₹1,200',
-                    '₹850',
-                    '29%',
-                    'Myntra.com',
-                    dh,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-
-      // floatingActionButton: Container(
-      //   decoration: BoxDecoration(
-      //     borderRadius: BorderRadius.all(Radius.circular(32)),
-      //   ),
-      //   child: FloatingActionButton.extended(
-      //     // autofocus: true,
-      //     splashColor: Color.fromARGB(255, 235, 189, 200),
-      //     onPressed: () {},
-      //     icon: Container(
-      //       width: 48,
-      //       height: 48,
-      //       child: Lottie.asset(
-      //         'assets/images/navbar/askZuriAnimation.json',
-      //         frameBuilder: (context, child, composition) {
-      //           if (composition != null) {
-      //             return child;
-      //           } else {
-      //             return const Icon(Icons.error, color: Colors.red);
-      //           }
-      //         },
-      //       ),
-      //     ),
-      //     label: Text(
-      //       'Ask Zuri',
-      //       style: GoogleFonts.libreFranklin(
-      //         color: AppColors.titleTextColor,
-      //         fontWeight: FontWeight.w600,
-      //         fontSize: 16,
-      //       ),
-      //     ),
-      //     backgroundColor: Colors.white,
-      //     elevation: 2.0,
-
-      //     // shape: StadiumBorder(
-      //     //   side: BorderSide(
-      //     //     color: AppColors.textPrimary, // Light pink border color
-      //     //   ),
-      //     // ),
-      //   ),
-      // ),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        ),
+      ],
     );
+
+    // floatingActionButton: Container(
+    //   decoration: BoxDecoration(
+    //     borderRadius: BorderRadius.all(Radius.circular(32)),
+    //   ),
+    //   child: FloatingActionButton.extended(
+    //     // autofocus: true,
+    //     splashColor: Color.fromARGB(255, 235, 189, 200),
+    //     onPressed: () {},
+    //     icon: Container(
+    //       width: 48,
+    //       height: 48,
+    //       child: Lottie.asset(
+    //         'assets/images/navbar/askZuriAnimation.json',
+    //         frameBuilder: (context, child, composition) {
+    //           if (composition != null) {
+    //             return child;
+    //           } else {
+    //             return const Icon(Icons.error, color: Colors.red);
+    //           }
+    //         },
+    //       ),
+    //     ),
+    //     label: Text(
+    //       'Ask Zuri',
+    //       style: GoogleFonts.libreFranklin(
+    //         color: AppColors.titleTextColor,
+    //         fontWeight: FontWeight.w600,
+    //         fontSize: 16,
+    //       ),
+    //     ),
+    //     backgroundColor: Colors.white,
+    //     elevation: 2.0,
+
+    //     // shape: StadiumBorder(
+    //     //   side: BorderSide(
+    //     //     color: AppColors.textPrimary, // Light pink border color
+    //     //   ),
+    //     // ),
+    //   ),
+    // ),
+    // floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
   }
 
   Widget _buildProductCard(

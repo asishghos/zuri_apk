@@ -7,44 +7,70 @@ import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
 
 class SetNewPasswordPage extends StatefulWidget {
+  final String email;
+
+  const SetNewPasswordPage({super.key, required this.email});
   @override
   _SetNewPasswordPageState createState() => _SetNewPasswordPageState();
 }
 
 class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _newPasswordController.dispose();
     super.dispose();
   }
 
   bool _isLoading = false;
 
-  Future<void> _login() async {
+  // Future<void> _login() async {
+  //   setState(() => _isLoading = true);
+
+  //   final result = await AuthApiService.loginUser(
+  //     email: _emailController.text,
+  //     password: _passwordController.text,
+  //   );
+  //   Developer.log("Result after Login $result");
+  //   setState(() => _isLoading = false);
+
+  //   if (result['success']) {
+  //     // after login navigate to next page so change accordingly
+
+  //     showSuccessSnackBar(context, result['msg']);
+  //     context.goNamed('splash');
+  //   } else {
+  //     showErrorSnackBar(context, result['msg']);
+  //   }
+  // }
+
+  Future<void> _setNewpassword(
+    String newPassword,
+    String confirmPassword,
+  ) async {
     setState(() => _isLoading = true);
+    try {
+      final result = await AuthApiService.resetPassword(
+        email: widget.email,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+      );
+      Developer.log("Result after Login $result");
+      setState(() => _isLoading = false);
 
-    final result = await AuthApiService.loginUser(
-      email: _emailController.text,
-      password: _passwordController.text,
-    );
-    Developer.log("Result after Login $result");
-    setState(() => _isLoading = false);
-
-    if (result['success']) {
-      // after login navigate to next page so change accordingly
-
-      showSuccessSnackBar(context, result['msg']);
-      context.goNamed('splash');
-    } else {
-      showErrorSnackBar(context, result['msg']);
+      if (result['success']) {
+        showSuccessSnackBar(context, result['msg']);
+        context.goNamed('login', extra: "set new password page");
+      } else {
+        showErrorSnackBar(context, result['msg']);
+      }
+    } catch (e) {
+      showErrorSnackBar(context, e.toString());
     }
   }
 
@@ -95,7 +121,7 @@ class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller: _emailController,
+                  controller: _newPasswordController,
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -158,7 +184,7 @@ class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller: _passwordController,
+                  controller: _confirmPasswordController,
                   obscureText: _obscurePassword,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -217,7 +243,10 @@ class _SetNewPasswordPageState extends State<SetNewPasswordPage> {
                         text: "Reset Password",
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            _login();
+                            _setNewpassword(
+                              _newPasswordController.text,
+                              _confirmPasswordController.text,
+                            );
                           }
                         },
                       ),

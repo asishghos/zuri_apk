@@ -1,4 +1,6 @@
 // weather_widget.dart
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:testing2/services/DataSource/weather_api.dart';

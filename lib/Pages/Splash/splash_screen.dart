@@ -67,23 +67,20 @@ class _ZuriVideoScreenState extends State<ZuriVideoScreen> {
     });
   }
 
-  Future<bool> isFirstTimeUser() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool? alreadyUsed = prefs.getBool('alreadyUsed');
-
-    if (alreadyUsed == null || alreadyUsed == false) {
-      await prefs.setBool('alreadyUsed', true);
-      return true; // First time
-    }
-    return false; // Not first time
-  }
+  // Future<bool> isFirstTimeUser() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   bool? alreadyUsed = prefs.getBool('alreadyUsed');
+  //   if (alreadyUsed == null || alreadyUsed == false) {
+  //     await prefs.setBool('alreadyUsed', true);
+  //     return true; // First time
+  //   }
+  //   return false; // Not first time
+  // }
 
   void _checkLoginStatus() async {
     try {
       Developer.log("=== Starting Full Login + First Time Check ===");
-
       final prefs = await SharedPreferences.getInstance();
-
       // Check if first time
       final isFirstTime = prefs.getBool('alreadyUsed') ?? false;
 

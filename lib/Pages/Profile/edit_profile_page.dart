@@ -1,17 +1,31 @@
+import 'dart:convert';
+import 'dart:developer' as Developer;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
-import 'package:testing2/Global/Widget/global_dialogbox.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Global/Widget/image_pick_global_logic.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
+import 'package:testing2/services/Class/auth_model.dart';
+import 'package:testing2/services/Class/location_model.dart';
+import 'package:testing2/services/DataSource/auth_api.dart';
+// Add your API service import here
+// import 'package:testing2/services/api_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
+  final UserProfileResponse profileResponse;
+
+  EditProfileScreen({Key? key, required this.profileResponse})
+    : super(key: key);
   @override
   _EditProfileScreenState createState() => _EditProfileScreenState();
 }
@@ -21,37 +35,81 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late SharedPreferences prefs;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _heightController = TextEditingController();
   final TextEditingController _footHeightController = TextEditingController();
   final TextEditingController _inchHeightController = TextEditingController();
   final TextEditingController _locationController = TextEditingController(
     text: 'Malda',
   );
 
-  // Global imge picker widget
+  // Global image picker widget
   final _imagePickerService = ImagePickerService();
-  File? _imageFile;
+  File? _uploadedImage;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
-  void _handlePickImage() {
-    _imagePickerService.showImageSourcePicker(
-      context: context,
-      onStartLoading: () {
-        setState(() => _isLoading = true);
-      },
-      onStopLoading: () {
-        setState(() => _isLoading = false);
-      },
-      onValidImagePicked: (imageFile) {
-        _imageFile = imageFile;
-        context.goNamed('autoUpload');
-      },
-      onInvalidImage: () {},
-    );
+
+  String _getBodyShape(String bodyShape) {
+    switch (bodyShape) {
+      case 'rectangle':
+        return "Rectangle";
+      case 'hourglass':
+        return "HourGlass";
+      case 'pear':
+        return "Pear";
+      case 'apple':
+        return "Apple";
+      case 'inverted triangle':
+        return "Inverted Triangle";
+      default:
+        return "Unknown";
+    }
   }
 
-  String selectedBodyShape = 'Hourglass';
-  String selectedSkinUndertone = 'Warm';
+  String _getSkinUnderTone(String skinUnderTone) {
+    switch (skinUnderTone) {
+      case 'cool':
+        return 'Cool';
+      case 'warm':
+        return 'Warm';
+      case 'neutral':
+        return 'Neutral';
+      default:
+        return "Unknown";
+    }
+  }
+
+  // Convert display values back to API format
+  String _getBodyShapeApiValue(String displayValue) {
+    switch (displayValue) {
+      case 'Rectangle':
+        return 'rectangle';
+      case 'HourGlass':
+        return 'hourglass';
+      case 'Pear':
+        return 'pear';
+      case 'Apple':
+        return 'apple';
+      case 'Inverted Triangle':
+        return 'inverted triangle';
+      default:
+        return 'rectangle';
+    }
+  }
+
+  String _getSkinUndertoneApiValue(String displayValue) {
+    switch (displayValue) {
+      case 'Cool':
+        return 'cool';
+      case 'Warm':
+        return 'warm';
+      case 'Neutral':
+        return 'neutral';
+      default:
+        return 'neutral';
+    }
+  }
+
+  late String selectedBodyShape;
+  late String selectedSkinUndertone;
   String selectedLocation = 'Malda';
   bool isBodyShapeExpanded = false;
   bool isSkinToneExpanded = false;
@@ -66,30 +124,190 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   ];
 
   final List<String> skinUndertoneOptions = ['Warm', 'Cool', 'Neutral'];
-
-  final List<String> _indianLocations = [
-    'Malda, West Bengal, India',
-    'Kolkata, West Bengal, India',
-    'Mumbai, Maharashtra, India',
-    'Delhi, India',
-    'Bengaluru, Karnataka, India',
-    'Chennai, Tamil Nadu, India',
-    'Hyderabad, Telangana, India',
-    // Add more as needed
-  ];
+  LocationData? locationData;
+  List<String> _allLocations = [];
 
   @override
   void initState() {
     super.initState();
     _initPrefs();
+    selectedBodyShape = _getBodyShape(
+      widget.profileResponse.data.userBodyInfo.bodyShape,
+    );
+    selectedSkinUndertone = _getSkinUnderTone(
+      widget.profileResponse.data.userBodyInfo.undertone,
+    );
+    _nameController.text = widget.profileResponse.data.fullName;
+    _emailController.text = widget.profileResponse.data.email;
+    _footHeightController.text =
+        widget.profileResponse.data.userBodyInfo.height?.feet.toString() ?? '';
+    _inchHeightController.text =
+        widget.profileResponse.data.userBodyInfo.height?.inches.toString() ??
+        '';
+
+    // Initialize height fields
+    _initializeHeightFields();
+
+    _loadLocationData();
+  }
+
+  void _initializeHeightFields() {
+    // If you have height data in your profile response, initialize it here
+    // This assumes you have height data in feet and inches format
+    // Adjust according to your UserProfileResponse structure
+
+    // Example initialization (adjust based on your data structure):
+    // if (widget.profileResponse.data.userBodyInfo.heightFeet != null) {
+    //   _footHeightController.text = widget.profileResponse.data.userBodyInfo.heightFeet.toString();
+    // }
+    // if (widget.profileResponse.data.userBodyInfo.heightInches != null) {
+    //   _inchHeightController.text = widget.profileResponse.data.userBodyInfo.heightInches.toString();
+    // }
+  }
+
+  Future<void> _loadLocationData() async {
+    String jsonString = await rootBundle.loadString(
+      'assets/json/india_locations.json',
+    );
+    Map<String, dynamic> jsonData = json.decode(jsonString);
+
+    setState(() {
+      locationData = LocationData.fromJson(jsonData);
+      _allLocations = _generateLocationStrings();
+    });
+  }
+
+  List<String> _generateLocationStrings() {
+    List<String> locations = [];
+
+    if (locationData != null) {
+      for (StateData state in locationData!.states) {
+        for (CityData city in state.cities) {
+          locations.add(
+            '${city.name}, ${state.name}, ${locationData!.country}',
+          );
+        }
+      }
+    }
+
+    return locations;
   }
 
   Future<void> _initPrefs() async {
     prefs = await SharedPreferences.getInstance();
+  }
+
+  // Update Profile Function
+  Future<void> _updateProfile() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     setState(() {
-      _nameController.text = prefs.getString('userFullName') ?? '';
-      _emailController.text = prefs.getString('userEmail') ?? '';
+      _isLoading = true;
     });
+
+    try {
+      // Parse height values
+      int? feet;
+      int? inches;
+
+      if (_footHeightController.text.isNotEmpty) {
+        feet = int.tryParse(_footHeightController.text);
+      }
+
+      if (_inchHeightController.text.isNotEmpty) {
+        inches = int.tryParse(_inchHeightController.text);
+      }
+
+      // Call the API service
+      // Replace 'ApiService' with your actual API service class
+      final result = await AuthApiService.updateUserProfile(
+        fullName: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        bodyShape: _getBodyShapeApiValue(selectedBodyShape),
+        undertone: _getSkinUndertoneApiValue(selectedSkinUndertone),
+        feet: feet,
+        inches: inches,
+        location: _locationController.text.trim(),
+        profilePicture: _uploadedImage,
+      );
+
+      if (result['success'] == true) {
+        // Show success message
+        Developer.log(result['msg'] ?? 'Profile updated successfully');
+        showSuccessSnackBar(
+          context,
+          result['msg'] ?? 'Profile updated successfully',
+        );
+
+        // Navigate back to profile screen
+        context.goNamed('profileAfterLogin');
+      } else {
+        // Show error message
+        Developer.log(result['msg'] ?? 'Failed to update profile');
+        showErrorSnackBar(context, result['msg'] ?? 'Failed to update profile');
+      }
+    } catch (e) {
+      Developer.log('An error occurred: ${e.toString()}');
+      showErrorSnackBar(context, 'An error occurred: ${e.toString()}');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      // Request permissions
+      if (source == ImageSource.camera) {
+        var status = await Permission.camera.request();
+        if (!status.isGranted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Camera permission denied'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+      } else if (source == ImageSource.gallery) {
+        var status = await Permission.photos.request();
+        if (!status.isGranted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gallery permission denied'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+      }
+      setState(() {});
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        imageQuality: 80,
+      );
+      if (pickedFile != null) {
+        setState(() {
+          _uploadedImage = File(pickedFile.path);
+          // selectedIndex = null;
+        });
+        setState(() {});
+      } else {
+        setState(() {});
+      }
+    } catch (e) {
+      setState(() {});
+      debugPrint('Error in _pickImage: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error picking image: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   bool showLocationSuggestions = false;
@@ -99,279 +317,347 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     double dh = MediaQuery.of(context).size.height;
     double dw = MediaQuery.of(context).size.width;
 
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        child: Column(
-          children: [
-            // Fixed Header Section
-            Container(
-              color: AppColors.textPrimary,
-              height: dh * 0.23,
-              child: SafeArea(
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(IconlyLight.arrowLeft2, size: 24),
-                          color: Colors.white,
-                          onPressed: () {
-                            context.goNamed('profileAfterLogin');
-                          },
-                        ),
-                        Text(
-                          'Edit Profile',
-                          style: GoogleFonts.libreFranklin(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Profile Image
-                    Expanded(
-                      child: Center(
-                        child: Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 46,
-                              backgroundImage: NetworkImage(
-                                'http://placebeard.it/250/250',
+    return _isLoading
+        ? LoadingPage()
+        : Material(
+            color: Colors.transparent,
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              child: Column(
+                children: [
+                  // Fixed Header Section
+                  Container(
+                    color: AppColors.textPrimary,
+                    height: dh * 0.23,
+                    child: SafeArea(
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  IconlyLight.arrowLeft2,
+                                  size: 24,
+                                ),
+                                color: Colors.white,
+                                onPressed: () {
+                                  context.goNamed('profileAfterLogin');
+                                },
                               ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding: EdgeInsets.all(6),
-                                decoration: BoxDecoration(
+                              Text(
+                                'Edit Profile',
+                                style: GoogleFonts.libreFranklin(
                                   color: Colors.white,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: GestureDetector(
-                                  onTap: () {
-                                    // Handle image edit
-                                    _handlePickImage();
-                                  },
-                                  child: Icon(
-                                    IconlyLight.edit,
-                                    color: Colors.grey[700],
-                                    size: 18,
-                                  ),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          // Profile Image
+                          Expanded(
+                            child: Center(
+                              child: Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 32,
+                                    backgroundColor: Color(0xFFE5E7EA),
+                                    child: _uploadedImage != null
+                                        ? ClipOval(
+                                            child: Image.file(
+                                              _uploadedImage!,
+                                              width: 64,
+                                              height: 64,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : widget
+                                                  .profileResponse
+                                                  .data
+                                                  .profilePicture !=
+                                              ""
+                                        ? ClipOval(
+                                            child: Image.network(
+                                              widget
+                                                  .profileResponse
+                                                  .data
+                                                  .profilePicture,
+                                              width: 64,
+                                              height: 64,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : HugeIcon(
+                                            icon: HugeIcons.strokeRoundedUser,
+                                            color: AppColors.titleTextColor,
+                                            size: 32,
+                                          ),
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: GestureDetector(
+                                        onTap: _showPicker,
+                                        child: Icon(
+                                          IconlyLight.edit,
+                                          color: Colors.grey[700],
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Scrollable Form Section
+                  Expanded(
+                    child: Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.all(24.0),
+                      child: SingleChildScrollView(
+                        physics: BouncingScrollPhysics(),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Full Name Field
+                              Text(
+                                'Full Name',
+                                style: GoogleFonts.libreFranklin(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF212936),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildInputField(
+                                label: 'Full Name',
+                                keyboardType: TextInputType.name,
+                                controller: _nameController,
+                                showClearButton: true,
+                                showChangeButton: false,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your full name';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Email',
+                                style: GoogleFonts.libreFranklin(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF212936),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // Email Field
+                              _buildInputField(
+                                label: 'Email',
+                                controller: _emailController,
+                                showClearButton: true,
+                                showChangeButton: false,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your email';
+                                  }
+                                  if (!RegExp(
+                                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                  ).hasMatch(value)) {
+                                    return 'Please enter a valid email';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Location',
+                                style: GoogleFonts.libreFranklin(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF212936),
+                                ),
+                              ),
+                              SizedBox(height: 12),
+                              // Location Field
+                              _buildLocationField(),
+
+                              SizedBox(height: 12),
+                              Text(
+                                'Body Shape',
+                                style: GoogleFonts.libreFranklin(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF212936),
+                                ),
+                              ),
+                              SizedBox(height: 12),
+                              // Body Shape Dropdown
+                              _buildDropDown(
+                                listOptions: bodyShapeOptions,
+                                selectedOption: selectedBodyShape,
+                                isExpanded: isBodyShapeExpanded,
+                                onTap: () {
+                                  setState(() {
+                                    isBodyShapeExpanded = !isBodyShapeExpanded;
+                                    // Close other dropdowns
+                                    isSkinToneExpanded = false;
+                                  });
+                                },
+                                onOptionSelected: (option) {
+                                  setState(() {
+                                    selectedBodyShape = option;
+                                    isBodyShapeExpanded = false;
+                                  });
+                                },
+                              ),
+
+                              const SizedBox(height: 12),
+                              Text(
+                                'Skin Undertone',
+                                style: GoogleFonts.libreFranklin(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF212936),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // Skin Undertone Dropdown
+                              _buildDropDown(
+                                listOptions: skinUndertoneOptions,
+                                selectedOption: selectedSkinUndertone,
+                                isExpanded: isSkinToneExpanded,
+                                onTap: () {
+                                  setState(() {
+                                    isSkinToneExpanded = !isSkinToneExpanded;
+                                    // Close other dropdowns
+                                    isBodyShapeExpanded = false;
+                                  });
+                                },
+                                onOptionSelected: (option) {
+                                  setState(() {
+                                    selectedSkinUndertone = option;
+                                    isSkinToneExpanded = false;
+                                  });
+                                },
+                              ),
+
+                              const SizedBox(height: 12),
+                              Text(
+                                'Height',
+                                style: GoogleFonts.libreFranklin(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF212936),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
+                              // Height Field
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 150,
+                                    child: _buildInputField(
+                                      label: 'Feet',
+                                      keyboardType: TextInputType.number,
+                                      controller: _footHeightController,
+                                      showClearButton: true,
+                                      showChangeButton: false,
+                                      validator: (value) {
+                                        if (value != null && value.isNotEmpty) {
+                                          final feet = int.tryParse(value);
+                                          if (feet == null ||
+                                              feet < 0 ||
+                                              feet > 10) {
+                                            return 'Invalid feet';
+                                          }
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "ft",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  SizedBox(
+                                    width: 150,
+                                    child: _buildInputField(
+                                      label: 'Inches',
+                                      keyboardType: TextInputType.number,
+                                      controller: _inchHeightController,
+                                      showClearButton: true,
+                                      showChangeButton: false,
+                                      validator: (value) {
+                                        if (value != null && value.isNotEmpty) {
+                                          final inches = int.tryParse(value);
+                                          if (inches == null ||
+                                              inches < 0 ||
+                                              inches >= 12) {
+                                            return 'Invalid inches';
+                                          }
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "in",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 24),
+
+                              GlobalPinkButton(
+                                text: "Update Profile",
+                                onPressed: _updateProfile,
+                              ),
+
+                              // Add some bottom spacing
+                              const SizedBox(height: 24),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Scrollable Form Section
-            Expanded(
-              child: Container(
-                color: Colors.white,
-                padding: const EdgeInsets.all(24.0),
-                child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Full Name Field
-                        Text(
-                          'Full Name',
-                          style: GoogleFonts.libreFranklin(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF212936),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInputField(
-                          label: 'Full Name',
-                          keyboardType: TextInputType.name,
-                          controller: _nameController,
-                          showClearButton: true,
-                          showChangeButton: false,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Email',
-                          style: GoogleFonts.libreFranklin(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF212936),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // Email Field
-                        _buildInputField(
-                          label: 'Email',
-                          controller: _emailController,
-                          showClearButton: true,
-                          showChangeButton: false,
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Location',
-                          style: GoogleFonts.libreFranklin(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF212936),
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        // Location Field
-                        _buildLocationField(),
-
-                        SizedBox(height: 12),
-                        Text(
-                          'Body Shape',
-                          style: GoogleFonts.libreFranklin(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF212936),
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        // Body Shape Dropdown
-                        _buildDropDown(
-                          listOptions: bodyShapeOptions,
-                          selectedOption: selectedBodyShape,
-                          isExpanded: isBodyShapeExpanded,
-                          onTap: () {
-                            setState(() {
-                              isBodyShapeExpanded = !isBodyShapeExpanded;
-                              // Close other dropdowns
-                              isSkinToneExpanded = false;
-                            });
-                          },
-                          onOptionSelected: (option) {
-                            setState(() {
-                              selectedBodyShape = option;
-                              isBodyShapeExpanded = false;
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 12),
-                        Text(
-                          'Skin Undertone',
-                          style: GoogleFonts.libreFranklin(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF212936),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // Skin Undertone Dropdown
-                        _buildDropDown(
-                          listOptions: skinUndertoneOptions,
-                          selectedOption: selectedSkinUndertone,
-                          isExpanded: isSkinToneExpanded,
-                          onTap: () {
-                            setState(() {
-                              isSkinToneExpanded = !isSkinToneExpanded;
-                              // Close other dropdowns
-                              isBodyShapeExpanded = false;
-                            });
-                          },
-                          onOptionSelected: (option) {
-                            setState(() {
-                              selectedSkinUndertone = option;
-                              isSkinToneExpanded = false;
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 12),
-                        Text(
-                          'Height',
-                          style: GoogleFonts.libreFranklin(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF212936),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Height Field
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 100, // Reduced width
-                              child: _buildInputField(
-                                label: 'Height in ft',
-                                keyboardType: TextInputType.number,
-                                controller: _footHeightController,
-                                showClearButton: true,
-                                showChangeButton: false,
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              "'ft",
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            SizedBox(
-                              width: 100, // Reduced width
-                              child: _buildInputField(
-                                label: 'Height in ft',
-                                keyboardType: TextInputType.number,
-                                controller: _inchHeightController,
-                                showClearButton: true,
-                                showChangeButton: false,
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              "'inch",
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Update Button
-                        GlobalPinkButton(
-                          text: "Update Profile",
-                          onPressed: () {},
-                        ),
-
-                        // Add some bottom spacing
-                        const SizedBox(height: 24),
-                      ],
-                    ),
                   ),
-                ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
+          );
   }
 
   Widget _buildInputField({
@@ -380,12 +666,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required bool showClearButton,
     required bool showChangeButton,
     required TextInputType keyboardType,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       textCapitalization: TextCapitalization.words,
-      // Add style for input text
+      validator: validator,
       style: GoogleFonts.libreFranklin(
         fontSize: 14,
         color: AppColors.titleTextColor,
@@ -409,6 +696,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(32),
           borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(32),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
@@ -453,20 +744,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     // Filter locations based on user input
     List<String> filteredLocations = _locationController.text.isEmpty
         ? []
-        : _indianLocations
+        : _allLocations
               .where(
                 (location) => location.toLowerCase().contains(
                   _locationController.text.toLowerCase(),
                 ),
               )
-              .take(5) // Limit to 5 suggestions
+              .take(5)
               .toList();
 
     // Show suggestions only if user is typing and there are matches
     bool showSuggestions =
         _locationController.text.isNotEmpty &&
         filteredLocations.isNotEmpty &&
-        showLocationSuggestions; // ✅ Now uses your flag
+        showLocationSuggestions;
 
     return Column(
       children: [
@@ -483,7 +774,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             fontSize: 14,
             color: AppColors.titleTextColor,
           ),
-
           decoration: InputDecoration(
             hintText: 'Type location (e.g., Kolkata, Mumbai)',
             hintStyle: GoogleFonts.libreFranklin(
@@ -553,13 +843,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     setState(() {
                       _locationController.text = location;
                       selectedLocation = location;
-                      showLocationSuggestions = false; // ✅ Hide suggestion box
-                      FocusScope.of(
-                        context,
-                      ).unfocus(); // Optional: hide keyboard
+                      showLocationSuggestions = false;
+                      FocusScope.of(context).unfocus();
                     });
                   },
-
                   child: Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -603,83 +890,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               }).toList(),
             ),
           ),
-
-        // Browse all locations (expanded view)
-        //   if (isLocationExpanded)
-        //     Container(
-        //       margin: EdgeInsets.only(top: 8),
-        //       decoration: BoxDecoration(
-        //         borderRadius: BorderRadius.circular(16),
-        //         color: Colors.white,
-        //         border: Border.all(color: Color(0xFF9EA2AE)),
-        //       ),
-        //       child: Column(
-        //         crossAxisAlignment: CrossAxisAlignment.start,
-        //         children: [
-        //           Padding(
-        //             padding: EdgeInsets.all(16),
-        //             child: Text(
-        //               'All Locations',
-        //               style: GoogleFonts.libreFranklin(
-        //                 fontSize: 14,
-        //                 fontWeight: FontWeight.w600,
-        //                 color: Color(0xFF212936),
-        //               ),
-        //             ),
-        //           ),
-        //           ...(_indianLocations.map((location) {
-        //             return GestureDetector(
-        //               onTap: () {
-        //                 setState(() {
-        //                   _locationController.text = location;
-        //                   selectedLocation = location;
-        //                   isLocationExpanded = false;
-        //                 });
-        //               },
-        //               child: Container(
-        //                 width: double.infinity,
-        //                 padding: EdgeInsets.symmetric(
-        //                   horizontal: 16,
-        //                   vertical: 12,
-        //                 ),
-        //                 decoration: BoxDecoration(
-        //                   color:
-        //                       selectedLocation == location
-        //                           ? Colors.grey[100]
-        //                           : Colors.transparent,
-        //                 ),
-        //                 child: Row(
-        //                   children: [
-        //                     Icon(
-        //                       Icons.location_on_outlined,
-        //                       size: 16,
-        //                       color:
-        //                           selectedLocation == location
-        //                               ? Colors.black
-        //                               : Color(0xFF9EA2AE),
-        //                     ),
-        //                     SizedBox(width: 8),
-        //                     Expanded(
-        //                       child: Text(
-        //                         location,
-        //                         style: GoogleFonts.libreFranklin(
-        //                           fontSize: 14,
-        //                           color:
-        //                               selectedLocation == location
-        //                                   ? AppColors.textPrimary
-        //                                   : AppColors.titleTextColor,
-        //                         ),
-        //                       ),
-        //                     ),
-        //                   ],
-        //                 ),
-        //               ),
-        //             );
-        //           }).toList()),
-        //         ],
-        //       ),
-        //     ),
-        // ],
       ],
     );
   }
@@ -802,6 +1012,107 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  void _showPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Container(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Select Image Source',
+                  style: GoogleFonts.libreFranklin(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.titleTextColor,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          _pickImage(ImageSource.gallery);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.photo_library,
+                                size: 40,
+                                color: AppColors.textPrimary,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Gallery',
+                                style: GoogleFonts.libreFranklin(
+                                  fontSize: 16,
+                                  color: AppColors.titleTextColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          _pickImage(ImageSource.camera);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.camera_alt,
+                                size: 40,
+                                color: AppColors.textPrimary,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Camera',
+                                style: GoogleFonts.libreFranklin(
+                                  fontSize: 16,
+                                  color: AppColors.titleTextColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

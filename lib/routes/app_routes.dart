@@ -15,12 +15,13 @@ import 'package:testing2/Pages/Chatbot/chathistory_screen.dart';
 import 'package:testing2/Pages/Events/event_main_screen.dart';
 import 'package:testing2/Pages/Home/home_page.dart';
 import 'package:testing2/Pages/Home/home_page_2.dart';
+import 'package:testing2/Pages/Profile/support_page.dart';
+import 'package:testing2/Pages/Saved/saved_fav_page.dart';
 import 'package:testing2/Pages/Scan&Discover/Auto/guidelines.dart';
 import 'package:testing2/Pages/Scan&Discover/Manual/quiz_page.dart';
 import 'package:testing2/Pages/Home2/home_screen2.dart';
 import 'package:testing2/Pages/Scan&Discover/Hybrid/face_image_upload_page.dart';
 import 'package:testing2/Pages/Scan&Discover/Manual/body_shape_option.dart';
-import 'package:testing2/Pages/Home2/image_display_page.dart';
 import 'package:testing2/Pages/Magazine/magazine_screen.dart';
 import 'package:testing2/Pages/Profile/profile_page_before_login.dart';
 import 'package:testing2/Pages/Products/affiliatelinks_page.dart';
@@ -39,11 +40,12 @@ import 'package:testing2/Pages/Wardrobe/CreateOutfits/create_outfit_page.dart';
 import 'package:testing2/Pages/Wardrobe/CreateOutfits/upload_outfit_page.dart';
 import 'package:testing2/Pages/Weather/location_page.dart';
 import 'package:testing2/routes/main_shell.dart';
-import 'package:testing2/services/Class/image_display_model.dart';
+import 'package:testing2/services/Class/auth_model.dart';
+import 'package:testing2/services/DataSource/auth_api.dart';
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/home2',
     debugLogDiagnostics: true,
     routes: [
       /// Shell with BottomNav
@@ -197,7 +199,10 @@ class AppRouter {
       GoRoute(
         path: '/login',
         name: 'login',
-        builder: (context, state) => LoginPage(),
+        builder: (context, state) {
+          final fromPage = state.extra as String;
+          return LoginPage(fromPage: fromPage);
+        },
       ),
       // profile drawer ---
       GoRoute(
@@ -215,7 +220,26 @@ class AppRouter {
       GoRoute(
         path: '/editProfile',
         name: 'editProfile',
-        builder: (context, state) => EditProfileScreen(),
+        builder: (context, state) {
+          final profileResponse = state.extra as UserProfileResponse;
+          return EditProfileScreen(profileResponse: profileResponse);
+        },
+      ),
+      // Support Page
+      GoRoute(
+        path: '/support',
+        name: 'support',
+        builder: (context, state) {
+          return SupportPage();
+        },
+      ),
+      // Saved Favorites
+      GoRoute(
+        path: '/savedFav',
+        name: 'savedFav',
+        builder: (context, state) {
+          return SavedFavoritesScreen();
+        },
       ),
       //Sign Up page
       GoRoute(
@@ -235,6 +259,7 @@ class AppRouter {
           appBarTitleGrey: " ",
           appBarTitlePink: " ",
           loc: "login",
+          extraData: "from Reset password page",
         ),
       ),
       // location page
@@ -266,15 +291,18 @@ class AppRouter {
       GoRoute(
         path: '/setNewPassword',
         name: 'setNewPassword',
-        builder: (context, state) => MainShell(
-          child: SetNewPasswordPage(),
-          showBackButton: true,
-          showBottomNavBar: false,
-          showAppBar: true,
-          appBarTitleGrey: " ",
-          appBarTitlePink: " ",
-          loc: "login",
-        ),
+        builder: (context, state) {
+          final String email = state.extra as String;
+          return MainShell(
+            child: SetNewPasswordPage(email: email),
+            showBackButton: true,
+            showBottomNavBar: false,
+            showAppBar: true,
+            appBarTitleGrey: " ",
+            appBarTitlePink: " ",
+            loc: "login",
+          );
+        },
       ),
       // Guidelines dos don'ts Page --
       GoRoute(
@@ -386,13 +414,13 @@ class AppRouter {
         path: '/styleAnalyze',
         name: 'styleAnalyze',
         builder: (context, state) {
-          final bodyShapeStr = state.uri.queryParameters["bodyShape"];
-          final skinToneStr = state.uri.queryParameters["skinTone"];
+          // final bodyShapeStr = state.uri.queryParameters["bodyShape"];
+          // final skinToneStr = state.uri.queryParameters["skinTone"];
 
           return MainShell(
             child: StyleAnalysisPage(
-              bodyShape: bodyShapeStr ?? '',
-              skinUndertone: skinToneStr ?? '',
+              // bodyShape: bodyShapeStr ?? '',
+              // skinUndertone: skinToneStr ?? '',
             ),
             showAppBar: false,
             showBackButton: false,
@@ -581,7 +609,7 @@ class AppRouter {
         name: "chatbot",
         builder: (context, state) {
           return MainShell(
-            child: ZuriChatScreen(userName: "Surbhi"),
+            child: ZuriChatScreen(),
             appBarTitleGrey: "your ai assistant",
             loc: "home",
             showAppBar: false,
@@ -594,17 +622,23 @@ class AppRouter {
         path: "/affiliate",
         name: "affiliate",
         builder: (context, state) {
-          final responce = state.extra as String;
-          return ChatOverlayManager(
-            userName: "Surabhi",
-            firstQuery: responce,
-            child: MainShell(
-              child: AffiliateLinksPage(),
-              appBarTitlePink: 'Pink dress suggestion',
-              showBackButton: true,
-              showBottomNavBar: false,
-              showAppBar: true,
-            ),
+          final extra = state.extra as Map<String, String?>;
+          return FutureBuilder<bool>(
+            future: AuthApiService.isLoggedIn(),
+            builder: (context, snapshot) {
+              final isLoggedIn = snapshot.data ?? false;
+              return ChatOverlayManager(
+                firstQuery: extra,
+                child: MainShell(
+                  child: AffiliateLinksPage(),
+                  appBarTitlePink: 'Pink dress suggestion',
+                  showBackButton: true,
+                  showBottomNavBar: false,
+                  showAppBar: true,
+                  loc: isLoggedIn ? 'home2' : 'home',
+                ),
+              );
+            },
           );
         },
       ),

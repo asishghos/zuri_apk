@@ -142,7 +142,7 @@ class _ScanDiscoverPageState extends State<ScanDiscoverPage> {
   @override
   Widget build(BuildContext context) {
     return _isLoading
-        ? const LoadingPage()
+        ? LoadingPage()
         : SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),

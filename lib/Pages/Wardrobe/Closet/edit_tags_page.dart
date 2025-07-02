@@ -117,6 +117,114 @@ class _EditTagsPageState extends State<EditTagsPage> {
     }
   }
 
+  void _applyUpdate() async {
+    // Use the actual garment ID from widget
+    final garmentId = widget.garmentId ?? '';
+
+    // Build the updated fields from selected tags
+    final updatedFields = <String, dynamic>{};
+
+    // Add selected values to update fields
+    if (selectedCategories.isNotEmpty) {
+      updatedFields['category'] =
+          selectedCategories.first; // Assuming single category
+    }
+
+    if (selectedColors.isNotEmpty) {
+      updatedFields['color'] = selectedColors.first; // Assuming single color
+    }
+
+    if (selectedFabrics.isNotEmpty) {
+      updatedFields['fabric'] = selectedFabrics.first; // Assuming single fabric
+    }
+
+    if (selectedOcassions.isNotEmpty) {
+      updatedFields['occasion'] = selectedOcassions; // Array of occasions
+    }
+
+    if (selectedSeasons.isNotEmpty) {
+      updatedFields['season'] = selectedSeasons; // Array of seasons
+    }
+
+    // Only proceed if there are changes to save
+    if (updatedFields.isEmpty) {
+      Developer.log("No changes to save");
+      return;
+    }
+
+    final updatedGarment = await WardrobeApiService.updateGarment(
+      garmentId: garmentId,
+      updatedFields: updatedFields,
+    );
+
+    if (updatedGarment != null) {
+      Developer.log("✅ Garment updated successfully");
+      // Navigate back or show success message
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Tags updated successfully!')));
+      }
+    } else {
+      Developer.log("❌ Failed to update garment");
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update tags')));
+      }
+    }
+  }
+
+  void _initializeSelectedTags(GarmentDetails garment) {
+    selectedColors = [garment.color.name];
+    selectedCategories = [garment.category];
+    selectedFabrics = [garment.fabric];
+    selectedOcassions = List.from(garment.occasion);
+    selectedSeasons = List.from(garment.season);
+  }
+
+  void _addNewItemsToLists(GarmentDetails garment) {
+    // Add new color if not exists
+    bool colorExists = colors.any(
+      (color) => color['name'] == garment.color.name,
+    );
+    if (!colorExists) {
+      colors.add({
+        'name': garment.color.name,
+        'hexCode': '0xFF808080', // Default gray color for new items
+      });
+      Developer.log("Added new color: ${garment.color.name}");
+    }
+
+    // Add new category if not exists
+    if (!categories.contains(garment.category)) {
+      categories.add(garment.category);
+      Developer.log("Added new category: ${garment.category}");
+    }
+
+    // Only add valid fabrics
+    if (!fabrics.contains(garment.fabric)) {
+      fabrics.add(garment.fabric);
+      Developer.log("Added new fabric: ${garment.fabric}");
+    }
+
+    // Add new occasions if not exist
+    // for (String occasion in garment.occasion) {
+    //   if (!_getAllOccasions().contains(occasion)) {
+    //     _addNewOccasion(occasion);
+    //     Developer.log("Added new occasion: $occasion");
+    //   }
+    // }
+
+    // Add new seasons if not exist
+    for (String season in garment.season) {
+      if (!seasons.contains(season)) {
+        seasons.add(season);
+        Developer.log("Added new season: $season");
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double dh = MediaQuery.of(context).size.height;
@@ -245,6 +353,7 @@ class _EditTagsPageState extends State<EditTagsPage> {
                     );
                   } else {
                     final garment = snapshot.data!;
+                    _initializeSelectedTags(garment);
                     final List<String> tags = [
                       garment.color.name,
                       garment.category,
@@ -479,7 +588,7 @@ class _EditTagsPageState extends State<EditTagsPage> {
                           child: ElevatedButton(
                             onPressed: () {
                               Navigator.pop(context);
-                              _applyFilters();
+                              _applyUpdate();
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.textPrimary,
@@ -1051,7 +1160,7 @@ class _EditTagsPageState extends State<EditTagsPage> {
         ),
         Expanded(
           child: ListView.builder(
-            itemCount: seasons.length,
+            itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
               bool isSelected = selectedCategories.contains(category);
@@ -1095,12 +1204,5 @@ class _EditTagsPageState extends State<EditTagsPage> {
         ),
       ],
     );
-  }
-
-  // Apply Filters Function
-  void _applyFilters() {
-    print('Selected Categories: $selectedCategories');
-    print('Selected Brands: $selectedColors');
-    print('Selected Websites: $selectedFabrics');
   }
 }

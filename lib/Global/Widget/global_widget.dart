@@ -135,7 +135,11 @@ class GlobalPinkButton extends StatelessWidget {
             ),
             if (rightIcon ?? false) ...[
               const SizedBox(width: 8),
-              Icon(rightIconData ?? Icons.arrow_forward_ios, size: 24),
+              HugeIcon(
+                icon: rightIconData ?? HugeIcons.strokeRoundedArrowRight01,
+                size: 24,
+                color: Colors.white,
+              ),
             ],
           ],
         ),

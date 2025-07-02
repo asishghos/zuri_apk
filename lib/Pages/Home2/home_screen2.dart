@@ -7,7 +7,7 @@ import 'package:testing2/services/Class/image_display_model.dart';
 import 'dart:developer' as Developer;
 import 'dart:io';
 
-import 'package:testing2/services/DataSource/generate_image_api.dart';
+// import 'package:testing2/services/DataSource/generate_image_api.dart';
 
 class HomeScreen2 extends StatefulWidget {
   @override

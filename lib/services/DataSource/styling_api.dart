@@ -22,6 +22,7 @@ class GenerateLookService {
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
+        Developer.log("✅ Image generate successfully");
         return GeneratedOccasionResponse.fromJson(jsonData);
       } else {
         debugPrint("❌ Error: ${response.statusCode} ${response.body}");
@@ -72,6 +73,8 @@ class GenerateLookService {
       final response = await http.Response.fromStream(streamedResponse);
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
+        Developer.log("✅ Image generate successfully");
+        print(response.body.trim());
         return StyledOutfitResponse.fromJson(decoded);
       } else {
         Developer.log("❌ Error: ${response.statusCode} ${response.body}");

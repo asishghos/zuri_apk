@@ -57,7 +57,7 @@ class _SignUpPageState extends State<SignUpPage> {
       //     "skinTone": prefs.getString("skinTone"),
       //   },
       // );
-      context.goNamed('login');
+      context.goNamed('login', extra: "success signup, came from SignUp page");
       showSuccessSnackBar(context, result['msg']);
     } else {
       showErrorSnackBar(context, result['msg']);
@@ -427,7 +427,10 @@ class _SignUpPageState extends State<SignUpPage> {
                           TextButton(
                             onPressed: () {
                               // Handle login
-                              context.goNamed('login');
+                              context.goNamed(
+                                'login',
+                                extra: "without signup, came from SignUp page",
+                              );
                             },
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,

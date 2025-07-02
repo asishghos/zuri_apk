@@ -1,3 +1,5 @@
+import 'dart:developer' as Developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,10 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
+import 'package:testing2/Pages/Profile/support_page.dart';
+import 'package:testing2/Pages/Saved/saved_fav_page.dart';
+import 'package:testing2/services/Class/auth_model.dart';
 import 'package:testing2/services/Class/result_class.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
 
@@ -19,10 +25,12 @@ class ProfileDrawerAfterLogin extends StatefulWidget {
 
 class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
   late SharedPreferences prefs;
+  UserProfileResponse? _profileResponse = null;
 
   @override
   void initState() {
     super.initState();
+    _getUserProfile();
     initPrefs();
   }
 
@@ -31,291 +39,462 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
     setState(() {});
   }
 
+  bool _isLoading = false;
+
+  Future<void> _getUserProfile() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final responce = await AuthApiService.getUserProfile();
+      if (responce != null) {
+        _profileResponse = responce;
+        if (_profileResponse?.data.profilePicture != null &&
+            _profileResponse!.data.profilePicture != "") {
+          prefs.setString("userProfilePic", responce.data.profilePicture);
+        }
+        prefs.setString("userFullName", _profileResponse!.data.fullName);
+        Developer.log(responce.msg.toString() + "✅✅");
+      } else {
+        Developer.log("_profileResponse is Null");
+      }
+    } catch (e) {
+      showErrorDialog(context, "Fetch user details fail");
+      Developer.log("Fetch user details fail");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _getBodyShape(String bodyShape) {
+    switch (bodyShape) {
+      case 'rectangle':
+        return "Rectangle";
+      case 'hourglass':
+        return "HourGlass";
+      case 'pear':
+        return "Pear";
+      case 'apple':
+        return "Apple";
+      case 'inverted triangle':
+        return "Inverted Triangle";
+      default:
+        return "Unknown";
+    }
+  }
+
+  String _getSkinUnderTone(String skinUnderTone) {
+    switch (skinUnderTone) {
+      case 'cool':
+        return 'Cool';
+      case 'warm':
+        return 'Warm';
+      case 'neutral':
+        return 'Neutral';
+      default:
+        return "Unknown";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double dh = MediaQuery.of(context).size.height;
     double dw = MediaQuery.of(context).size.width;
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      child: Drawer(
-        child: Column(
-          children: [
-            Container(
-              color: AppColors.textPrimary,
-              height: dh * 0.23,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              Navigator.pop(context);
-                              context.goNamed('editProfile');
-                            },
-                            child: Row(
+    if (_isLoading) {
+      return LoadingPage();
+    } else {
+      return Container(
+        width: MediaQuery.of(context).size.width,
+        child: Drawer(
+          child: Column(
+            children: [
+              Container(
+                color: AppColors.textPrimary,
+                height: dh * 0.23,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                // Navigator.pop(context);
+                                context.goNamed(
+                                  'editProfile',
+                                  extra: _profileResponse,
+                                );
+                              },
+                              child: Row(
+                                children: [
+                                  Text(
+                                    'My Profile',
+                                    style: GoogleFonts.libreFranklin(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(width: dw * 0.1),
+                                  const HugeIcon(
+                                    icon: HugeIcons.strokeRoundedEdit02,
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => context.goNamed('home2'),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Profile Info
+                        Row(
+                          children: [
+                            // Profile Picture
+                            CircleAvatar(
+                              radius: 32,
+                              backgroundColor: Color(0xFFE5E7EA),
+                              child:
+                                  _profileResponse?.data.profilePicture !=
+                                          null &&
+                                      _profileResponse!.data.profilePicture !=
+                                          ""
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        _profileResponse!.data.profilePicture,
+                                        width: 64,
+                                        height: 64,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : HugeIcon(
+                                      icon: HugeIcons.strokeRoundedUser,
+                                      color: AppColors.titleTextColor,
+                                      size: 32,
+                                    ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Profile Details
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      IconlyLight.location,
+                                      color: Color(0xFFFFFFFF),
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      ResultCache.loactiondata?[0] ??
+                                          "location",
+                                      style: GoogleFonts.libreFranklin(
+                                        color: Color(0xFFFFFFFF),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
                                 Text(
-                                  'My Profile',
+                                  _profileResponse?.data.fullName ??
+                                      "User Name",
                                   style: GoogleFonts.libreFranklin(
                                     color: Colors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                SizedBox(width: dw * 0.1),
-                                const HugeIcon(
-                                  icon: HugeIcons.strokeRoundedEdit02,
-                                  color: Colors.white,
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      _getBodyShape(
+                                        _profileResponse
+                                                ?.data
+                                                .userBodyInfo
+                                                .bodyShape ??
+                                            "Unknown",
+                                      ),
+                                      style: GoogleFonts.libreFranklin(
+                                        color: Color(0xFFF3F4F6),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      "  |  ",
+                                      style: TextStyle(
+                                        color: Color(0xFFF3F4F6),
+                                      ),
+                                    ),
+                                    Text(
+                                      _getSkinUnderTone(
+                                        _profileResponse
+                                                ?.data
+                                                .userBodyInfo
+                                                .undertone ??
+                                            "Unknown",
+                                      ),
+                                      style: GoogleFonts.libreFranklin(
+                                        color: Color(0xFFF3F4F6),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      "  |  ",
+                                      style: TextStyle(
+                                        color: Color(0xFFF3F4F6),
+                                      ),
+                                    ),
+                                    Text(
+                                      "${_profileResponse?.data.userBodyInfo.height?.feet ?? '--'}'${_profileResponse?.data.userBodyInfo.height?.inches ?? '--'}",
+                                      style: GoogleFonts.libreFranklin(
+                                        color: Color(0xFFF3F4F6),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () => context.goNamed('home2'),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 32,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Profile Info
-                      Row(
-                        children: [
-                          // Profile Picture
-                          const CircleAvatar(
-                            radius: 32,
-                            backgroundColor: Color(0xFFE5E7EA),
-                            child: HugeIcon(
-                              icon: HugeIcons.strokeRoundedUser,
-                              color: AppColors.titleTextColor,
-                              size: 32,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Profile Details
-                          Column(
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Content Section
+              Expanded(
+                child: Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(16.0),
+                  child: SingleChildScrollView(
+                    physics: BouncingScrollPhysics(),
+                    child: Column(
+                      children: [
+                        _buildMenuItem(
+                          icon: HugeIcons.strokeRoundedHanger,
+                          title: 'Closet Stats',
+                          subtitle:
+                              '${_profileResponse?.closetStats ?? 0} item',
+                          onTap: () {
+                            context.goNamed('allItemsWardrobe', extra: 1);
+                          },
+                          pinkSubtitle: true,
+                        ),
+                        _buildDivider(width: dw * 0.05),
+                        _buildMenuItem(
+                          icon: HugeIcons.strokeRoundedUpload04,
+                          title: 'Uploaded Looks',
+                          subtitle:
+                              "Your best angles you've uploaded - in one spot!",
+                          onTap: () {},
+                          pinkSubtitle: false,
+                        ),
+                        _buildDivider(width: dw * 0.05),
+                        _buildMenuItem(
+                          icon: HugeIcons.strokeRoundedBookmark02,
+                          title: 'Saved Favorites',
+                          subtitle:
+                              'Our curations from your closet that you  💝',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return SavedFavoritesScreen();
+                                },
+                              ),
+                            );
+                          },
+                          pinkSubtitle: false,
+                        ),
+                        _buildDivider(width: dw * 0.05),
+                        _buildMenuItem(
+                          icon: HugeIcons.strokeRoundedFavourite,
+                          title: 'Zuri Wishlist',
+                          subtitle: 'Your faves from our online finds!',
+                          onTap: () {},
+                          pinkSubtitle: false,
+                        ),
+                        _buildDivider(width: dw * 0.05),
+                        _buildMenuItem(
+                          icon: HugeIcons.strokeRoundedAddCircle,
+                          title: 'New Additions',
+                          subtitle: 'Latest closet uploads & fresh buys',
+                          onTap: () {},
+                          pinkSubtitle: false,
+                        ),
+                        Container(
+                          width: double.infinity,
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  const Icon(
-                                    IconlyLight.location,
-                                    color: Color(0xFFFFFFFF),
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    ResultCache.loactiondata?[0] ?? "location",
-                                    style: GoogleFonts.libreFranklin(
-                                      color: Color(0xFFFFFFFF),
-                                      fontSize: 14,
+                                  if (_profileResponse
+                                              ?.newAdditions[0]
+                                              .imageUrl !=
+                                          null &&
+                                      _profileResponse!
+                                          .newAdditions[0]
+                                          .imageUrl
+                                          .isNotEmpty)
+                                    _buildProductImage(
+                                      _profileResponse!
+                                          .newAdditions[0]
+                                          .imageUrl,
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                prefs.getString('userFullName') ?? "User Name",
-                                style: GoogleFonts.libreFranklin(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Hour Glass',
-                                    style: GoogleFonts.libreFranklin(
-                                      color: Color(0xFFF3F4F6),
-                                      fontSize: 14,
+                                  const SizedBox(width: 8),
+                                  if (_profileResponse
+                                              ?.newAdditions[1]
+                                              .imageUrl !=
+                                          null &&
+                                      _profileResponse!
+                                          .newAdditions[1]
+                                          .imageUrl
+                                          .isNotEmpty)
+                                    _buildProductImage(
+                                      _profileResponse!
+                                          .newAdditions[1]
+                                          .imageUrl,
                                     ),
-                                  ),
-                                  Text(
-                                    "  |  ",
-                                    style: TextStyle(color: Color(0xFFF3F4F6)),
-                                  ),
-                                  Text(
-                                    'Warm, Medium',
-                                    style: GoogleFonts.libreFranklin(
-                                      color: Color(0xFFF3F4F6),
-                                      fontSize: 14,
+                                  const SizedBox(width: 8),
+                                  if (_profileResponse
+                                              ?.newAdditions[2]
+                                              .imageUrl !=
+                                          null &&
+                                      _profileResponse!
+                                          .newAdditions[2]
+                                          .imageUrl
+                                          .isNotEmpty)
+                                    _buildProductImage(
+                                      _profileResponse!
+                                          .newAdditions[2]
+                                          .imageUrl,
                                     ),
-                                  ),
-                                  Text(
-                                    "  |  ",
-                                    style: TextStyle(color: Color(0xFFF3F4F6)),
-                                  ),
-                                  Text(
-                                    '5\'5',
-                                    style: GoogleFonts.libreFranklin(
-                                      color: Color(0xFFF3F4F6),
-                                      fontSize: 14,
-                                    ),
-                                  ),
                                 ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Content Section
-            Expanded(
-              child: Container(
-                color: Colors.white,
-                padding: const EdgeInsets.all(16.0),
-                child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      _buildMenuItem(
-                        icon: HugeIcons.strokeRoundedHanger,
-                        title: 'Closet Stats',
-                        subtitle: '1 item',
-                        onTap: () {},
-                      ),
-                      _buildDivider(width: dw * 0.05),
-                      _buildMenuItem(
-                        icon: HugeIcons.strokeRoundedUpload04,
-                        title: 'Uploaded Looks',
-                        subtitle:
-                            "Your best angles you've uploaded - in one spot!",
-                        onTap: () {},
-                      ),
-                      _buildDivider(width: dw * 0.05),
-                      _buildMenuItem(
-                        icon: HugeIcons.strokeRoundedBookmark02,
-                        title: 'Saved Favorites',
-                        subtitle: 'Our curations from your closet that you  💝',
-                        onTap: () {},
-                      ),
-                      _buildDivider(width: dw * 0.05),
-                      _buildMenuItem(
-                        icon: HugeIcons.strokeRoundedFavourite,
-                        title: 'Zuri Wishlist',
-                        subtitle: 'Your faves from our online finds!',
-                        onTap: () {},
-                      ),
-                      _buildDivider(width: dw * 0.05),
-                      _buildMenuItem(
-                        icon: HugeIcons.strokeRoundedAddCircle,
-                        title: 'New Additions',
-                        subtitle: 'Latest closet uploads & fresh buys',
-                        onTap: () {},
-                      ),
-                      Container(
-                        width: double.infinity,
-                        child: Column(
+                        ),
+                        SizedBox(height: dh * 0.02),
+                        Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                _buildProductImage('Blue Dress'),
-                                const SizedBox(width: 8),
-                                _buildProductImage('Black Heels'),
-                                const SizedBox(width: 8),
-                                _buildProductImage('Blue Pants'),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: dh * 0.02),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: dw * 0.7,
-                            height: dh * 0.05,
-                            child: GlobalPinkButton(
-                              fontSize: 14,
-                              text: "Create fab looks with these now! 💃🏻",
-                              onPressed: () {},
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: dh * 0.02),
-                      _buildDivider(width: dw * 0.05),
-                      _buildMenuItem(
-                        icon: HugeIcons.strokeRoundedCustomerSupport,
-                        title: "Support",
-                        subtitle:
-                            "We're just a call or text away, you Unstoppable Style Queen 👑",
-                        onTap: () {},
-                      ),
-                      _buildDivider(width: dw * 0.05),
-                      SizedBox(height: dh * 0.02),
-                      // Log out
-                      GestureDetector(
-                        onTap: () async {
-                          showGlobalDeleteConfirmationDialog(
-                            context: context,
-                            title: "confirm",
-                            content: "Are you sure?",
-                            onConfirm: () async {
-                              final result = await AuthApiService.logoutUser();
-                              if (result['success']) {
-                                context.goNamed('home');
-                              } else {
-                                // Show error message or still navigate to login
-                                // since local tokens were cleared anyway
-                                context.goNamed('login');
-                              }
-                              return;
-                            },
-                          );
-                          // final result = await AuthApiService.logoutUser();
-                          // if (result['success']) {
-                          //   context.goNamed('home');
-                          // } else {
-                          //   // Show error message or still navigate to login
-                          //   // since local tokens were cleared anyway
-                          //   context.goNamed('login');
-                          // }
-                        },
-                        child: Row(
-                          children: [
-                            HugeIcon(
-                              icon: HugeIcons.strokeRoundedLogout03,
-                              color: Color(0xFFFF5236),
-                              size: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Log out',
-                              style: GoogleFonts.libreFranklin(
-                                color: Colors.red,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                            SizedBox(
+                              width: dw * 0.7,
+                              height: dh * 0.05,
+                              child: GlobalPinkButton(
+                                fontSize: 14,
+                                text: "Create fab looks with these now! 💃🏻",
+                                onPressed: () {},
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      SizedBox(height: dh * 0.04),
-                    ],
+                        SizedBox(height: dh * 0.02),
+                        _buildDivider(width: dw * 0.05),
+                        _buildMenuItem(
+                          icon: HugeIcons.strokeRoundedCustomerSupport,
+                          title: "Support",
+                          subtitle:
+                              "We're just a call or text away, you Unstoppable Style Queen 👑",
+                          onTap: () {
+                            // context.goNamed('support');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return SupportPage();
+                                },
+                              ),
+                            );
+                          },
+                          pinkSubtitle: false,
+                        ),
+                        _buildDivider(width: dw * 0.05),
+                        SizedBox(height: dh * 0.02),
+                        // Log out
+                        GestureDetector(
+                          onTap: () async {
+                            showGlobalDeleteConfirmationDialog(
+                              context: context,
+                              title: "confirm",
+                              content: "Are you sure?",
+                              onConfirm: () async {
+                                final result =
+                                    await AuthApiService.logoutUser();
+                                if (result['success']) {
+                                  await prefs
+                                      .clear(); // This removes all keys and values
+                                  context.goNamed('home');
+                                } else {
+                                  // Show error message or still navigate to login
+                                  // since local tokens were cleared anyway
+                                  context.goNamed(
+                                    'login',
+                                    extra:
+                                        "from profile page after logout -- from After Login Profile Page",
+                                  );
+                                }
+                                return;
+                              },
+                            );
+                            // final result = await AuthApiService.logoutUser();
+                            // if (result['success']) {
+                            //   context.goNamed('home');
+                            // } else {
+                            //   // Show error message or still navigate to login
+                            //   // since local tokens were cleared anyway
+                            //   context.goNamed('login');
+                            // }
+                          },
+                          child: Row(
+                            children: [
+                              HugeIcon(
+                                icon: HugeIcons.strokeRoundedLogout03,
+                                color: Color(0xFFFF5236),
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Log out',
+                                style: GoogleFonts.libreFranklin(
+                                  color: Colors.red,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: dh * 0.04),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Widget _buildDivider({required double width}) {
@@ -333,6 +512,7 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    required bool pinkSubtitle,
   }) {
     return Container(
       // padding: EdgeInsets.all(8),
@@ -362,7 +542,9 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
                       subtitle,
                       style: GoogleFonts.libreFranklin(
                         fontSize: 14,
-                        color: Color(0xFF9EA2AE),
+                        color: pinkSubtitle
+                            ? AppColors.textPrimary
+                            : Color(0xFF9EA2AE),
                       ),
                     ),
                   ],
@@ -380,16 +562,14 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
     );
   }
 
-  Widget _buildProductImage(String altText) {
+  Widget _buildProductImage(String imageUrl) {
     return Expanded(
       child: Container(
-        height: 120,
+        height: 150,
+
         child: ClipRRect(
           borderRadius: BorderRadius.circular(25),
-          child: Image(
-            image: NetworkImage('http://placebeard.it/250/250'),
-            fit: BoxFit.cover,
-          ),
+          child: Image(image: NetworkImage(imageUrl), fit: BoxFit.fill),
         ),
       ),
     );
