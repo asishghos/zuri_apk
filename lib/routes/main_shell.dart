@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:lottie/lottie.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
@@ -115,30 +115,34 @@ class MainShell extends StatelessWidget {
               automaticallyImplyLeading: showBackButton,
               leadingWidth: 56,
               leading: showBackButton
-                  ? IconButton(
-                      icon: const Icon(IconlyLight.arrowLeft2, size: 24),
-                      color: const Color(0xFF5D4037),
-                      onPressed: handleBackNavigation,
+                  ? GestureDetector(
+                      onTap: handleBackNavigation,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowLeft01,
+                        size: 24,
+                        color: AppColors.titleTextColor,
+                      ),
                     )
                   : null,
               title: RichText(
                 text: TextSpan(
                   style: GoogleFonts.libreFranklin(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
                   children: [
                     // First half (grey)
                     TextSpan(
                       text: appBarTitleGrey,
-                      style: TextStyle(color: Colors.grey.shade700),
+                      style: GoogleFonts.libreFranklin(
+                        color: AppColors.titleTextColor,
+                      ),
                     ),
                     // Second half (pink)
                     TextSpan(
                       text: appBarTitlePink,
-                      style: TextStyle(
-                        color: Color(0xFFDC4C72),
-                        fontStyle: FontStyle.italic,
+                      style: GoogleFonts.libreFranklin(
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],

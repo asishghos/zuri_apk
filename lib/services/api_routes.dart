@@ -1,6 +1,6 @@
 class ApiRoutes {
   // Base url
-  static const String baseUrl = 'https://af21-223-185-33-34.ngrok-free.app';
+  static const String baseUrl = 'https://f1ca-223-185-30-68.ngrok-free.app';
 
   // Style Analyze routes
   static const String manualAnalyze = '${baseUrl}/api/analyze/manual';
@@ -31,6 +31,8 @@ class ApiRoutes {
   static const String getEventDetails = '$baseUrl/api/events/getEventDetails';
   static const String updateEvent = '$baseUrl/api/events/updateEvent';
   static const String deleteEvent = '$baseUrl/api/events/deleteEvent';
+  static const String styleToEvent =
+      '$baseUrl/api/styleToEvent/addImageToEvent';
 
   //digital wardrobe routes
   static const String addGarments = '${baseUrl}/api/wardrobe/addToWardrobe';
@@ -58,7 +60,21 @@ class ApiRoutes {
   static const String deleteFavouriteSavedFavourites =
       '${baseUrl}/api/savedFavourites/deleteFavourite';
 
+  // Zuri Magazine routes
+  static const String getAllCategoriesMagazine =
+      '${baseUrl}/api/magazine/allCategories';
+  static const String getByCategoryMagazine =
+      '${baseUrl}/api/magazine/articlesByCategory';
+  static const String getByIdMagazine = '${baseUrl}/api/magazine/article';
+
+  // Uploaded Look routes
+  static const String addUploadedLooks = '${baseUrl}/api/uploadedLooks/addLook';
+  static const String getUploadedLooks =
+      '${baseUrl}/api/uploadedLooks/getLooks';
+  static const String getUploadedLookById = '${baseUrl}/api/uploadedLooks/look';
+  static const String deleteUploadedLook =
+      '${baseUrl}/api/uploadedLooks/deleteLook';
+
   // other routes
   static const String product = '${baseUrl}/api/products';
-  // static const String generateImageOcassionWise = '${baseUrl}/generate_image';
 }

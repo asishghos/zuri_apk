@@ -1,35 +1,40 @@
 import 'dart:convert';
+import 'dart:developer' as Developer;
 import 'package:http/http.dart' as http;
 import 'package:testing2/services/Class/product_model.dart';
+import 'package:testing2/services/DataSource/auth_api.dart';
 import 'package:testing2/services/api_routes.dart';
 
-class ProductApiService {
-  static Future<List<ProductClass>?> productAPIService(
-    List<List<String>> data,
-  ) async {
-    try {
-      final uri = Uri.parse(ApiRoutes.product);
+/// API service class
+class ProductApiServices {
+  static Future<List<ProductItem>> fetchProducts(List<String> keywords) async {
+    final url = Uri.parse(ApiRoutes.product);
 
+    try {
       final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'keywords': data}),
+        url,
+        headers: await AuthApiService.getHeaders(includeAuth: true),
+        body: jsonEncode({
+          'keywords': keywords.map((k) => [k]).toList(),
+        }),
       );
 
       if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-
-        // Expecting a List of product maps
-        return decoded
-            .map<ProductClass>((item) => ProductClass.fromJson(item))
+        final List<dynamic> data = jsonDecode(response.body);
+        Developer.log(data.toString());
+        return data
+            .map<ProductItem>(
+              (item) => ProductItem.fromJson(item as Map<String, dynamic>),
+            )
             .toList();
       } else {
-        print('Server error ${response.statusCode}: ${response.body}');
-        return null;
+        throw Exception(
+          'Failed to fetch products: ${response.statusCode} ${response.body}',
+        );
       }
     } catch (e) {
-      print('API error: $e');
-      return null;
+      Developer.log("API error: $e");
+      throw Exception('Something went wrong. Please try again later.');
     }
   }
 }

@@ -8,8 +8,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // This line is REQUIRED before any async calls
   await dotenv.load(fileName: ".env");
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.remove('alreadyUsed');
-  await prefs.remove('isFirstTime');
+  // await prefs.remove('alreadyUsed');
+  // await prefs.remove('isFirstTime');
   runApp(MyApp());
 }
 

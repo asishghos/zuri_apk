@@ -138,6 +138,10 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
   Widget build(BuildContext context) {
     double dh = MediaQuery.of(context).size.height;
     double dw = MediaQuery.of(context).size.width;
+
+    if (isLoading) {
+      return LoadingPage();
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -215,21 +219,16 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
                 ],
               ),
             ),
-
             // Scrollable part
             Expanded(
-              child: isLoading
-                  ? LoadingPage()
-                  : _favoriteItems.isEmpty
+              child: _favoriteItems.isEmpty
                   ? SingleChildScrollView(
                       padding: EdgeInsets.all(20),
                       child: _buildEmptyState(),
                     )
                   : Padding(
                       padding: EdgeInsets.all(20),
-                      child: _buildFavoritesGrid(
-                        dh,
-                      ), // <- GridView directly in Expanded
+                      child: _buildFavoritesGrid(dh),
                     ),
             ),
           ],
@@ -243,7 +242,7 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
       // mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "You haven’t saved any Favorites yet!",
+          "Love it? Favorite it!",
           style: GoogleFonts.libreFranklin(
             color: AppColors.textPrimary,
             fontSize: 16,
@@ -257,7 +256,7 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
         Row(
           children: [
             Text(
-              'Zuri’s styled these looks just for you—based on your wardrobe and shoppable picks—so you’re never stuck wondering what to wear. ',
+              'If Zuri’s curations hit the mark, don’t let them slip away.',
               style: GoogleFonts.libreFranklin(
                 fontSize: 15,
                 color: AppColors.titleTextColor,
@@ -268,23 +267,23 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
         ),
         SizedBox(height: 16),
         Text(
-          'From boss-mode meetings to chill brunches, save the looks you love now and come back to them anytime you’re ready to dress to impress',
+          'Tap that bookmark to keep the magic before it’s gone for good.',
           style: GoogleFonts.libreFranklin(
             fontSize: 15,
             color: AppColors.titleTextColor,
           ),
         ),
-        SizedBox(height: 16),
-        Text(
-          'Your closet, but smarter. Tap to favorite!',
-          style: GoogleFonts.libreFranklin(
-            fontSize: 15,
-            color: AppColors.titleTextColor,
-          ),
-        ),
+        // SizedBox(height: 16),
+        // Text(
+        //   'Your closet, but smarter. Tap to favorite!',
+        //   style: GoogleFonts.libreFranklin(
+        //     fontSize: 15,
+        //     color: AppColors.titleTextColor,
+        //   ),
+        // ),
         SizedBox(height: 32),
         GlobalPinkButton(
-          text: "Start styling",
+          text: "Curate a look you 🤍 now",
           onPressed: () {
             context.goNamed('uploadOutfit');
           },
@@ -301,7 +300,7 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.60,
+        childAspectRatio: 0.70,
       ),
       itemCount: _favoriteItems.length,
       itemBuilder: (context, index) {
@@ -321,6 +320,7 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
                 dh,
                 index,
                 isSaved,
+                item,
               ),
               Positioned(
                 top: 8,
@@ -372,6 +372,7 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
     double dh,
     int index,
     bool isSaved,
+    SavedFavouriteData item,
   ) {
     return Container(
       color: Colors.white,
@@ -381,12 +382,13 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
           Expanded(
             child: Container(
               width: double.infinity,
+              height: dh * 0.25,
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.all(Radius.circular(32)),
                 color: const Color(0xFFF5F5F5),
                 image: DecorationImage(
                   image: NetworkImage(imagePath),
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
@@ -406,7 +408,7 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
                                       occasion.substring(1)
                                 : '') +
                             " Outfit",
-                        maxLines: 5,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.libreFranklin(
                           fontSize: 18,
@@ -426,29 +428,93 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
                                 color: Colors.pink[400],
                               ),
                             )
-                          : Icon(
-                              isSaved ? Icons.bookmark : Icons.bookmark_border,
-                              color: Colors.pink[400],
+                          : HugeIcon(
+                              icon: isSaved
+                                  ? Icons.bookmark
+                                  : Icons.bookmark_border,
+                              color: AppColors.textPrimary,
                               size: 20,
                             ),
                     ),
                   ],
                 ),
-                Text(
-                  description,
-                  style: GoogleFonts.libreFranklin(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Use TextPainter to check if text overflows 2 lines
+                    final span = TextSpan(
+                      text: description,
+                      style: GoogleFonts.libreFranklin(
+                        fontSize: 12,
+                        color: AppColors.titleTextColor,
+                      ),
+                    );
+                    final tp = TextPainter(
+                      text: span,
+                      maxLines: 2,
+                      textDirection: TextDirection.ltr,
+                    )..layout(maxWidth: constraints.maxWidth);
+
+                    final isOverflow = tp.didExceedMaxLines;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.libreFranklin(
+                            fontSize: 12,
+                            color: AppColors.titleTextColor,
+                          ),
+                        ),
+                        if (isOverflow)
+                          GestureDetector(
+                            onTap: () {
+                              _showExpandedView(item, index);
+                              // showDialog(
+                              // context: context,
+                              // builder: (context) => AlertDialog(
+                              //   content: Text(
+                              //   description,
+                              //   style: GoogleFonts.libreFranklin(
+                              //     fontSize: 14,
+                              //     color: AppColors.titleTextColor,
+                              //   ),
+                              //   ),
+                              // ),
+                              // );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 2.0),
+                              child: Text(
+                                'see more',
+                                style: GoogleFonts.libreFranklin(
+                                  color: Colors.blue,
+                                  fontSize: 12,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
+                const SizedBox(height: 4),
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.textPrimary,
                     borderRadius: BorderRadius.circular(32),
                   ),
+                  padding: EdgeInsets.only(left: 4, right: 4),
                   child: Text(
                     tag,
-                    style: GoogleFonts.libreFranklin(color: Colors.white),
+                    style: GoogleFonts.libreFranklin(
+                      color: Color(0xFFF9FAFB),
+                      fontSize: 10,
+                    ),
                   ),
                 ),
               ],
@@ -467,36 +533,24 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
         return Dialog(
           backgroundColor: Colors.transparent,
           child: Container(
+            padding: EdgeInsets.all(20),
             width: MediaQuery.of(context).size.width * 0.9,
             height: MediaQuery.of(context).size.height * 0.8,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
+            decoration: BoxDecoration(color: Colors.transparent),
             child: Column(
               children: [
                 // Header
                 Container(
-                  padding: EdgeInsets.all(16),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: Icon(Icons.arrow_back, color: Colors.grey[600]),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Saved Favorites',
-                          style: GoogleFonts.libreFranklin(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[800],
-                          ),
+                        icon: HugeIcon(
+                          icon: HugeIcons.strokeRoundedCancelCircle,
+                          color: Colors.red,
+                          size: 36,
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(Icons.close, color: Colors.red),
                       ),
                     ],
                   ),
@@ -504,14 +558,13 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
                 // Expanded Image
                 Expanded(
                   child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 20),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(32),
                       color: Colors.grey[100],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: Image.asset(
+                      borderRadius: BorderRadius.circular(32),
+                      child: Image.network(
                         item.imageUrl,
                         fit: BoxFit.cover,
                         width: double.infinity,
@@ -521,63 +574,53 @@ class _SavedFavoritesScreenState extends State<SavedFavoritesScreen> {
                 ),
                 // Bottom Section
                 Container(
-                  padding: EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 12),
+
                       Row(
                         children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.pink[100],
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: Text(
-                              'From your Closet',
-                              style: GoogleFonts.libreFranklin(
-                                color: Colors.pink[600],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          Spacer(),
                           Text(
-                            item.occasion + "Outfit",
+                            (item.occasion.isNotEmpty
+                                    ? item.occasion[0].toUpperCase() +
+                                          item.occasion.substring(1)
+                                    : '') +
+                                " Outfit",
                             style: GoogleFonts.libreFranklin(
-                              color: Colors.pink[400],
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFDC4C72),
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(
-                            Icons.bookmark,
-                            color: Colors.pink[400],
-                            size: 20,
                           ),
                         ],
                       ),
-                      SizedBox(height: 12),
-                      Text(
-                        item.description,
-                        style: GoogleFonts.libreFranklin(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.pink[400],
-                        ),
-                      ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       Text(
                         item.description,
                         style: GoogleFonts.libreFranklin(
                           fontSize: 16,
-                          color: Colors.grey[600],
-                          height: 1.4,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFF9FAFB),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.textPrimary,
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        child: Text(
+                          item.tag,
+                          style: GoogleFonts.libreFranklin(
+                            color: Color(0xFFF9FAFB),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],

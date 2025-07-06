@@ -1,6 +1,6 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:math';
 
 class LoadingPage extends StatefulWidget {
   @override
@@ -9,73 +9,271 @@ class LoadingPage extends StatefulWidget {
 
 class _LoadingPageState extends State<LoadingPage>
     with TickerProviderStateMixin {
-  late AnimationController _controller;
-  List<String> quotes = [
-    "Twirl into 2025 with a flared skirt & cinched waist! 🥻💫 Polka dots scream 50s diner diva.",
-    "Audrey’s elegance lives on! 😎 Pearl studs + cat-eye liner for that iconic 50s glow-up.",
-    "Pastel dresses are *it*! 🌸 Pair with ballet flats for a 50s vibe that slays today.",
-    "Red lips, winged eyeliner 💋. Keep skin fresh & dewy for that modern 50s Insta look.",
-    "Poodle skirts are poppin’! 🐩 Style with chunky sneakers for a Gen Z 50s remix.",
-    "Leather jackets = Grease vibes ⚡. Tuck in a white tee & add high-waisted jeans for edge.",
-    "Silk scarves are everything! 🧣 Knot one in your hair for that 50s starlet charm.",
-    "Capri pants are back, babes! 👖 Bright colors + a fitted blouse = retro vacation slay.",
-    "Saddle shoes for the win! 👟 Rock with ankle socks & a midi skirt for 50s TikTok vibes.",
-    "Oversized bows = big 50s energy 🎀. Pop one in your ponytail for that vintage flex.",
-    "Cardigans are cute & chic! 🧥 Button-up over a sundress for that 50s sweetheart look.",
-    "High-waisted shorts are fire 🔥. Pair with a tucked-in blouse for 50s summer vibes.",
-    "Floral headbands are trending! 🌼 Add to a low bun for that 50s garden-party glow.",
-    "Swing dresses with petticoats? Yes, please! 💃 Layer with a denim jacket for 2025 cool.",
-    "Classic pumps in bold colors 👠. Match with a pencil skirt for 50s office chic.",
-    "Polka dot blouses are forever! 🟠 Tuck into high-waisted trousers for retro realness.",
-    "Cat-eye glasses = instant 50s glam 😻. Pair with a sleek updo for maximum slay.",
-    "Pleated skirts are a mood! 🩰 Add a fitted sweater for that 50s co-ed aesthetic.",
-    "Bold lipstick shades are key 💄. Coral or cherry red for that 50s Hollywood vibe.",
-    "T-strap heels are back! 👡 Style with a fit-and-flare dress for 50s-inspired elegance.",
-    "Chiffon scarves for the win! 🧵 Tie around your neck for that 50s movie-star energy.",
-    "Cropped jackets are *chef’s kiss* 🧶. Layer over a sundress for a 50s-modern mashup.",
-    "Peter Pan collars are adorable! 👗 Add to a dress or blouse for 50s dainty vibes.",
-    "Midi skirts with cinched belts 🎀. Pair with a crisp white shirt for retro perfection.",
-    "Retro swimsuits are hot! 🏖️ High-waisted bikinis channel 50s pin-up realness.",
-    "Statement brooches are back! 📌 Pin on a cardigan for that 50s vintage sparkle.",
-    "Flared jeans with a fitted top 👖. Add a scarf for that 50s rockabilly edge.",
-    "Wingtip shoes for a bold look! 👞 Pair with cuffed trousers for 50s-inspired swagger.",
-    "Circle skirts with bold prints 🌈. Spin into 2025 with a modern 50s twirl.",
-    "Gloves are serving elegance! 🧤 Short white gloves for that 50s tea-party vibe.",
-    "Belted dresses are timeless! 🎗️ Cinch at the waist for that 50s hourglass silhouette.",
-    "Retro sunglasses are a must 😎. Oversized frames for that 50s Hollywood diva look.",
-    "Polka dot scarves are iconic! 🟡 Tie one on your bag for a 50s-inspired pop.",
-    "Fit-and-flare dresses = romance 💕. Add a cardigan for that 50s sweetheart style.",
-    "Chunky knit sweaters are cozy! 🧶 Pair with a skirt for 50s campus queen vibes.",
-    "High ponytails with scrunchies 🦋. Channel 50s cheerleader energy with a modern twist.",
-    "A-line dresses are always in! 👗 Go for bold colors to nail that 50s aesthetic.",
-    "Berets are chic AF! 🧢 Tilt one to the side for that 50s Parisian-inspired look.",
-    "Pencil dresses for the win! 🖤 Hug those curves for 50s bombshell energy.",
-    "Retro handbags are everything! 👜 Structured purses for that 50s ladylike slay.",
-    "Rock that retro vibe with high-waisted skirts & cinched waists! 🥻✨ Pair with bold polka dots for that 50s diner chic.",
-    "Channel Audrey Hepburn with a sleek updo & cat-eye sunglasses 😎. Add a pearl choker for timeless glam!",
-    "Swing into 2025 with full-circle dresses 🌸. Floral prints + pastel hues = modern 50s slay!",
-    "Bold red lips 💋 & winged eyeliner are *the* 50s comeback. Keep it fresh with dewy skin for that Insta glow.",
-    "Poodle skirts are back, babes! 🐩 Style with chunky sneakers for a Gen Z twist on 50s swagger.",
-    "Grab a leather jacket for that Grease lightning vibe ⚡. Pair with slim-fit jeans for a 50s rebel refresh.",
-    "Scarves are your BFF! 🧣 Tie one around your neck or hair for that 50s starlet sparkle.",
-    "Capri pants are poppin’! 👖 Go for bright colors & tuck in a fitted blouse for that 50s vacay mood.",
-    "Saddle shoes are serving looks! 👟 Mix with ankle socks & a pleated skirt for a 50s-inspired TikTok moment.",
-    "Big bows, bigger energy 🎀. Add oversized hair bows to elevate your 50s-inspired ponytail.",
-  ];
+  late AnimationController _rotationController;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
+  Timer? _quoteTimer;
+  int _currentQuoteIndex = 0;
+
+  // Sample quotes with author information
+  final List<Map<String, String>> quotes = [
+    {
+      "quote":
+          "If you can’t be better than your competition, just dress better.",
+      "authorName": "Anna Wintour",
+      "authorBio":
+          "British-American fashion editor who served as editor-in-chief of American Vogue from 1988 to 2025, shaping global fashion trends.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/3/3d/Anna_Wintour_2015.jpg",
+    },
+    {
+      "quote": "Fashion is about dreaming and making other people dream.",
+      "authorName": "Donatella Versace",
+      "authorBio":
+          "Italian fashion designer and sister of Gianni Versace; took over as creative director of Versace in 1997, infusing bold glamour into the brand.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/9/9e/Donatella_Versace_2010.jpg",
+    },
+    {
+      "quote":
+          "You have a more interesting life if you wear impressive clothes.",
+      "authorName": "Vivienne Westwood",
+      "authorBio":
+          "British fashion designer who brought punk and new wave fashions into the mainstream. Known for her provocative designs and political activism.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/7/7d/Vivienne_Westwood_2014.jpg",
+    },
+    {
+      "quote": "She can beat me, but she cannot beat my outfit.",
+      "authorName": "Rihanna",
+      "authorBio":
+          "Barbadian singer, actress, and businesswoman. Founder of Fenty Beauty and known for her influence in music and fashion.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/8/8e/Rihanna_2018.png",
+    },
+    {
+      "quote":
+          "When you don’t dress like everybody else, you don’t have to think like everybody else.",
+      "authorName": "Iris Apfel",
+      "authorBio":
+          "American businesswoman and fashion icon known for her eclectic style and oversized glasses. Worked on White House restoration projects for nine presidents.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/9/9d/Iris_Apfel_2015.jpg",
+    },
+    {
+      "quote": "Elegance is the only beauty that never fades.",
+      "authorName": "Audrey Hepburn",
+      "authorBio":
+          "British actress and humanitarian. Recognized as a film and fashion icon, known for roles in 'Breakfast at Tiffany's' and 'Roman Holiday'.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/3/3e/Audrey_Hepburn_1956.jpg",
+    },
+    {
+      "quote":
+          "One is never over-dressed or under-dressed with a little black dress.",
+      "authorName": "Karl Lagerfeld",
+      "authorBio":
+          "German fashion designer and creative director of Chanel from 1983 until his death in 2019, known for revitalizing the brand.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/0/0e/Karl_Lagerfeld_2010.jpg",
+    },
+    {
+      "quote":
+          "I like my money right where I can see it… hanging in my closet.",
+      "authorName": "Carrie Bradshaw",
+      "authorBio":
+          "Fictional character from 'Sex and the City', portrayed as a fashion-forward columnist navigating love and life in New York City.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/1/1e/Sarah_Jessica_Parker_2009.jpg",
+    },
+    {
+      "quote": "Playing dress-up begins at age five and never truly ends.",
+      "authorName": "Kate Spade",
+      "authorBio":
+          "American fashion designer and entrepreneur, co-founder of Kate Spade New York, known for her vibrant and playful designs.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/6/6d/Kate_Spade_2016.jpg",
+    },
+    {
+      "quote": "Give a girl the right shoes and she can conquer the world.",
+      "authorName": "Marilyn Monroe",
+      "authorBio":
+          "Iconic American actress and model of the 1950s, celebrated for her beauty, talent, and tragic life story.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/7/79/Marilyn_Monroe_1953.jpg",
+    },
+    {
+      "quote": "You can have anything you want in life if you dress for it.",
+      "authorName": "Edith Head",
+      "authorBio":
+          "Renowned American costume designer with a record eight Academy Awards, known for her work in classic Hollywood films.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/2/2c/Edith_Head_1976.jpg",
+    },
+    {
+      "quote": "Some girls are just born with glitter in their veins.",
+      "authorName": "Blair Waldorf",
+      "authorBio":
+          "Fictional character from 'Gossip Girl', depicted as a stylish and ambitious New York socialite.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/5/5f/Leighton_Meester_2010.jpg",
+    },
+    {
+      "quote":
+          "Fashion is self-expression. It’s like art you live your life in.",
+      "authorName": "Blake Lively",
+      "authorBio":
+          "American actress known for her roles in 'Gossip Girl' and films, admired for her fashion sense and red carpet appearances.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/2/2f/Blake_Lively_2016.jpg",
+    },
+    {
+      "quote":
+          "There’s nothing sexier than a woman who is comfortable in her clothes.",
+      "authorName": "Jennifer Aniston",
+      "authorBio":
+          "American actress and producer, rose to fame with 'Friends', known for her effortless style and charm.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/8/88/Jennifer_Aniston_2011.jpg",
+    },
+    {
+      "quote": "Dressing well is a form of good manners.",
+      "authorName": "Victoria Beckham",
+      "authorBio":
+          "British singer-turned-fashion designer, known for her sophisticated designs and personal style.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/3/3d/Victoria_Beckham_2010.jpg",
+    },
+    {
+      "quote": "I love when my clothes make me feel like I’m telling a story.",
+      "authorName": "Selena Gomez",
+      "authorBio":
+          "American singer and actress, recognized for her evolving fashion choices and influence on pop culture.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/4/4d/Selena_Gomez_2019.jpg",
+    },
+    {
+      "quote": "Style is a way to say who you are without having to speak.",
+      "authorName": "Kim Kardashian",
+      "authorBio":
+          "American media personality and entrepreneur, known for her impact on fashion and beauty industries.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/0/0f/Kim_Kardashian_2019.jpg",
+    },
+    {
+      "quote":
+          "Beauty and style should be inclusive. Every skin tone, every size, every body.",
+      "authorName": "Kim Kardashian",
+      "authorBio":
+          "American media personality and entrepreneur, known for her impact on fashion and beauty industries.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/0/0f/Kim_Kardashian_2019.jpg",
+    },
+    {
+      "quote":
+          "Style is about being fearless and expressing yourself without apology.",
+      "authorName": "Kylie Jenner",
+      "authorBio":
+          "American media personality and businesswoman, founder of Kylie Cosmetics, influential in beauty and fashion.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/1/1e/Kylie_Jenner_2018.jpg",
+    },
+    {
+      "quote":
+          "I’ve always loved fashion—it’s a way of creating a mood and showing who you are.",
+      "authorName": "Kylie Jenner",
+      "authorBio":
+          "American media personality and businesswoman, founder of Kylie Cosmetics, influential in beauty and fashion.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/1/1e/Kylie_Jenner_2018.jpg",
+    },
+    {
+      "quote": "The right outfit makes you feel unstoppable.",
+      "authorName": "Kylie Jenner",
+      "authorBio":
+          "American media personality and businesswoman, founder of Kylie Cosmetics, influential in beauty and fashion.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/1/1e/Kylie_Jenner_2018.jpg",
+    },
+    {
+      "quote":
+          "Fashion is just another way to express how I’m feeling that day.",
+      "authorName": "Kylie Jenner",
+      "authorBio":
+          "American media personality and businesswoman, founder of Kylie Cosmetics, influential in beauty and fashion.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/1/1e/Kylie_Jenner_2018.jpg",
+    },
+    {
+      "quote": "I don’t speak fashion. I speak truth. Through clothes.",
+      "authorName": "Jeremy Scott",
+      "authorBio":
+          "American fashion designer and creative director of Moschino, known for his bold and unconventional designs.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/9/9f/Jeremy_Scott_2011.jpg",
+    },
+    {
+      "quote": "I don’t want to make garments. I want to create emotions.",
+      "authorName": "Anamika Khanna",
+      "authorBio":
+          "Indian fashion designer renowned for blending traditional Indian textiles with modern silhouettes.",
+      "authorPicUrl":
+          "https://upload.wikimedia.org/wikipedia/commons/8/8e/Anamika_Khanna_2015.jpg",
+    },
+  ];
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    // Rotation animation for the progress indicator
+    _rotationController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
     );
-    _controller.repeat();
+    _rotationController.repeat();
+
+    // Fade animation for quote transitions
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    // Start with random quote
+    _currentQuoteIndex = Random().nextInt(quotes.length);
+    _fadeController.forward();
+
+    // Set up timer for quote rotation
+    _startQuoteTimer();
+  }
+
+  void _startQuoteTimer() {
+    _quoteTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
+      _changeQuote();
+    });
+  }
+
+  void _changeQuote() {
+    _fadeController.reverse().then((_) {
+      setState(() {
+        int newIndex;
+        do {
+          newIndex = Random().nextInt(quotes.length);
+        } while (newIndex == _currentQuoteIndex && quotes.length > 1);
+        _currentQuoteIndex = newIndex;
+      });
+      _fadeController.forward();
+    });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _rotationController.dispose();
+    _fadeController.dispose();
+    _quoteTimer?.cancel();
     super.dispose();
   }
 
@@ -112,7 +310,7 @@ class _LoadingPageState extends State<LoadingPage>
                     ),
                     // Animated progress arc
                     RotationTransition(
-                      turns: _controller,
+                      turns: _rotationController,
                       child: Container(
                         width: 80,
                         height: 80,
@@ -129,21 +327,121 @@ class _LoadingPageState extends State<LoadingPage>
                   ],
                 ),
               ),
-              SizedBox(height: 40),
-              // Fashion tips/ Quotes text
-              Center(
-                child: Text(
-                  quotes[Random().nextInt(quotes.length)],
-                  style: TextStyle(
-                    color: Color(
-                      0xFFE91E63,
-                    ), // Pink color matching the progress
-                    fontSize: 18,
-                    fontWeight: FontWeight.w400,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
+              SizedBox(height: 50),
+
+              // Quote section with fade animation
+              AnimatedBuilder(
+                animation: _fadeAnimation,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: _fadeAnimation.value,
+                    child: Container(
+                      constraints: BoxConstraints(maxWidth: 350),
+                      child: Column(
+                        children: [
+                          // // Author profile picture
+                          // Container(
+                          //   width: 80,
+                          //   height: 80,
+                          //   decoration: BoxDecoration(
+                          //     shape: BoxShape.circle,
+                          //     border: Border.all(
+                          //       color: Color(0xFFE91E63),
+                          //       width: 3,
+                          //     ),
+                          //   ),
+                          //   child: ClipOval(
+                          //     child: Image.network(
+                          //       quotes[_currentQuoteIndex]["authorPicUrl"]!,
+                          //       width: 80,
+                          //       height: 80,
+                          //       fit: BoxFit.cover,
+                          //       errorBuilder: (context, error, stackTrace) {
+                          //         return Container(
+                          //           width: 80,
+                          //           height: 80,
+                          //           decoration: BoxDecoration(
+                          //             shape: BoxShape.circle,
+                          //             color: Colors.grey.shade300,
+                          //           ),
+                          //           child: Icon(
+                          //             Icons.person,
+                          //             size: 40,
+                          //             color: Colors.grey.shade600,
+                          //           ),
+                          //         );
+                          //       },
+                          //     ),
+                          //   ),
+                          // ),
+                          // SizedBox(height: 20),
+
+                          // Quote text
+                          Text(
+                            '"${quotes[_currentQuoteIndex]["quote"]}"',
+                            style: TextStyle(
+                              color: Color(0xFFE91E63),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w400,
+                              fontStyle: FontStyle.italic,
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 15),
+
+                          // Author name
+                          Text(
+                            "— ${quotes[_currentQuoteIndex]["authorName"]}",
+                            style: TextStyle(
+                              color: Color(0xFFE91E63),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 10),
+
+                          // Author bio
+                          Text(
+                            quotes[_currentQuoteIndex]["authorBio"]!,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w300,
+                              height: 1.3,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
+
+              SizedBox(height: 30),
+
+              // // Progress dots indicator
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: List.generate(
+              //     quotes.length,
+              //     (index) => Container(
+              //       margin: EdgeInsets.symmetric(horizontal: 4),
+              //       width: 8,
+              //       height: 8,
+              //       decoration: BoxDecoration(
+              //         shape: BoxShape.circle,
+              //         color: index == _currentQuoteIndex
+              //             ? Color(0xFFE91E63)
+              //             : Colors.grey.shade300,
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),

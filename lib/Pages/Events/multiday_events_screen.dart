@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
-import 'package:testing2/services/Class/EventsModel/update_event_model.dart';
 import 'package:testing2/services/Class/event_model.dart';
 import 'package:testing2/services/DataSource/event_api_service.dart';
 import 'event_details_screen.dart';
@@ -360,7 +359,7 @@ class _MultiDayEventsPageState extends State<MultiDayEventsPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height:
-            MediaQuery.of(context).size.height * 095, // 95% of screen height
+            MediaQuery.of(context).size.height * 0.95, // 95% of screen height
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
@@ -375,12 +374,12 @@ class _MultiDayEventsPageState extends State<MultiDayEventsPage> {
           onEventDeleted: (event.event.daySpecificData.length > 1)
               ? () async {
                   Navigator.pop(context);
-                  Navigator.pop(context);
+                  // Navigator.pop(context);
                   await _refreshEventData();
                 }
               : () {
                   Navigator.pop(context);
-                  Navigator.pop(context);
+                  // Navigator.pop(context);
                   Navigator.pop(context, true);
                 },
         ),

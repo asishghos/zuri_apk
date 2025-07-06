@@ -91,7 +91,7 @@ class GuidelinesPage extends StatelessWidget {
           },
         ),
         title: Text(
-          'Zuri Closet Goals Start Here—Upload It All',
+          'Dos & Don’ts for Snapping Items \ninto Your Zuri Closet',
           style: GoogleFonts.libreFranklin(
             fontSize: 16,
             color: Color(0xFF121417),
@@ -110,7 +110,7 @@ class GuidelinesPage extends StatelessWidget {
             const SizedBox(height: 16),
             // Main title
             Text(
-              'Closet Upload – Do it Right',
+              'Closet Upload- Doing it Right 👍',
               style: GoogleFonts.libreFranklin(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -122,7 +122,7 @@ class GuidelinesPage extends StatelessWidget {
 
             // Subtitle
             Text(
-              'For Zuri to nail your look, upload clear pics flatlays, gallery shots, or order screenshots work best.',
+              'For Zuri to nail your look, upload clear flatlays, gallery shots, or order screenshots.',
               style: GoogleFonts.libreFranklin(
                 fontSize: 16,
                 color: AppColors.titleTextColor,
@@ -156,7 +156,7 @@ class GuidelinesPage extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildPhotoExample(
-                    imagePath: 'assets/images/guidelines/p8.png',
+                    imagePath: 'assets/images/guidelines/p9.png',
                     title: 'Order Screenshot',
                     green: true,
                     red: false,
@@ -169,7 +169,7 @@ class GuidelinesPage extends StatelessWidget {
 
             // Second section title
             Text(
-              'Avoid these for best results',
+              'Closet Upload- Doing it Wrong 👎',
               style: GoogleFonts.libreFranklin(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -190,7 +190,7 @@ class GuidelinesPage extends StatelessWidget {
                 children: [
                   TextSpan(
                     text:
-                        'For the most accurate analysis, please follow \nthese guidelines:',
+                        'For the most accurate analysis, please avoid the following.',
                   ),
                 ],
               ),
@@ -204,8 +204,8 @@ class GuidelinesPage extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildPhotoExample(
-                    imagePath: 'assets/images/guidelines/p4.png',
-                    title: 'Side or back view',
+                    imagePath: 'assets/images/guidelines/p12.png',
+                    title: 'Incomplete views',
                     green: false,
                     red: true,
                   ),
@@ -213,8 +213,8 @@ class GuidelinesPage extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildPhotoExample(
-                    imagePath: 'assets/images/guidelines/p2.png',
-                    title: 'Obstructed View',
+                    imagePath: 'assets/images/guidelines/p11.png',
+                    title: 'Multiple items',
                     green: false,
                     red: true,
                   ),
@@ -222,8 +222,8 @@ class GuidelinesPage extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildPhotoExample(
-                    imagePath: 'assets/images/guidelines/p3.png',
-                    title: 'Group Pics',
+                    imagePath: 'assets/images/guidelines/p10.png',
+                    title: 'Low resolution image',
                     green: false,
                     red: true,
                   ),

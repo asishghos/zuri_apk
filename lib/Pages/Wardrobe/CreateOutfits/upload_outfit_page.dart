@@ -13,6 +13,19 @@ import 'package:testing2/Pages/Wardrobe/CreateOutfits/clothing_selection_popup.d
 import 'package:testing2/services/Class/digital_wardrobe_model.dart';
 
 class UploadOutfitPage extends StatefulWidget {
+  final bool? isDialogBoxOpen;
+  final String? occasion;
+  final String? description;
+  final String? eventId;
+  final String? loaction;
+  UploadOutfitPage({
+    super.key,
+    this.isDialogBoxOpen,
+    this.occasion,
+    this.description,
+    this.eventId,
+    this.loaction,
+  });
   @override
   _UploadOutfitPageState createState() => _UploadOutfitPageState();
 }
@@ -33,6 +46,22 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
 
   // Simulate different states for demo
   int currentState = 0; // 0: initial, 1: one item uploaded, 2: ready to style
+  @override
+  void initState() {
+    super.initState();
+
+    // Log all incoming widget data
+    Developer.log("isDialogBoxOpen: ${widget.isDialogBoxOpen}");
+    Developer.log("occasion: ${widget.occasion}");
+    Developer.log("description: ${widget.description}");
+    Developer.log("eventId: ${widget.eventId}");
+    Developer.log("location: ${widget.loaction}");
+
+    // Set occasion in controller if available
+    if (widget.occasion != null && widget.occasion!.isNotEmpty) {
+      _occasionController.text = widget.occasion!;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,19 +90,28 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
                   TextSpan(
                     children: [
                       TextSpan(
-                        text: "Create ",
+                        text: "Style me ",
                         style: GoogleFonts.libreFranklin(
                           color: AppColors.titleTextColor,
                           fontSize: 16,
-                          // fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       TextSpan(
-                        text: "Outfit",
+                        text: "the",
                         style: GoogleFonts.libreFranklin(
                           color: AppColors.textPrimary,
                           fontSize: 16,
-                          // fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      TextSpan(
+                        text: " Look!",
+                        style: GoogleFonts.libreFranklin(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -89,13 +127,17 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Style me For a',
-                    style: GoogleFonts.libreFranklin(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.titleTextColor,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Curate me an outfit for...',
+                        style: GoogleFonts.libreFranklin(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.titleTextColor,
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 12),
                   TextField(
@@ -131,10 +173,17 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
                         vertical: 16,
                       ),
                     ),
+                    onChanged: (value) {
+                      if (value.isNotEmpty) {
+                        setState(() {
+                          currentState = 0;
+                        });
+                      }
+                    },
                   ),
                   SizedBox(height: 24),
                   Text(
-                    'Lorem ipsium is a simple dummy text',
+                    '''Drop an item or 2 from your Zuri closet or Phone gallery—I'll work my magic around it.''',
                     style: GoogleFonts.libreFranklin(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -183,7 +232,11 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
               Developer.log('Unexpected result type: ${result.runtimeType}');
               return;
             }
-
+            if (_occasionController.text.isNotEmpty) {
+              currentState = 1;
+            } else {
+              currentState = 2;
+            }
             images.add(imageFile);
 
             setState(() {
@@ -209,6 +262,11 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
               Developer.log('Unexpected result type: ${result.runtimeType}');
               return;
             }
+            if (_occasionController.text.isNotEmpty) {
+              currentState = 1;
+            } else {
+              currentState = 2;
+            }
             images.add(imageFile);
             setState(() {
               _bottomsImage = imageFile;
@@ -233,6 +291,11 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
               Developer.log('Unexpected result type: ${result.runtimeType}');
               return;
             }
+            if (_occasionController.text.isNotEmpty) {
+              currentState = 1;
+            } else {
+              currentState = 2;
+            }
             images.add(imageFile);
             setState(() {
               _footwearImage = imageFile;
@@ -256,6 +319,11 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
             } else {
               Developer.log('Unexpected result type: ${result.runtimeType}');
               return;
+            }
+            if (_occasionController.text.isNotEmpty) {
+              currentState = 1;
+            } else {
+              currentState = 2;
             }
             images.add(imageFile);
 
@@ -426,25 +494,41 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
 
   Widget _buildActionButton() {
     bool hasAnyItem =
-        hasTopUploaded &&
-        hasBottomUploaded &&
-        hasFootwearUploaded &&
-        hasAccessoriesUploaded &&
+        (hasTopUploaded ||
+            hasBottomUploaded ||
+            hasFootwearUploaded ||
+            hasAccessoriesUploaded) &&
         _occasionController.text.isNotEmpty;
 
     return GlobalPinkButton(
       text: _getButtonText(),
       onPressed: hasAnyItem
           ? () {
+              currentState = 1;
+              final extraData = <String, dynamic>{};
+
+              if (widget.occasion != null && widget.occasion!.isNotEmpty)
+                extraData["occasion"] = widget.occasion;
+              if (widget.description != null && widget.description!.isNotEmpty)
+                extraData["description"] = widget.description;
+              if (widget.eventId != null && widget.eventId!.isNotEmpty)
+                extraData["eventId"] = widget.eventId;
+              if (widget.loaction != null && widget.loaction!.isNotEmpty)
+                extraData["location"] = widget.loaction;
+
+              if (extraData.isNotEmpty) {
+                extraData["isDialogBoxOpen"] = true;
+              }
+
               context.goNamed(
                 'createOutfit',
                 queryParameters: {
                   "occasion": _occasionController.text,
-                  "imagePaths": images
-                      .map((file) => file.path)
-                      .join(','), // Convert to comma-separated paths
+                  "imagePaths": images.map((file) => file.path).join(','),
                 },
+                extra: extraData.isNotEmpty ? extraData : null,
               );
+              Developer.log("data come on this page .. create outfit page ");
             }
           : () {},
       backgroundColor: hasAnyItem ? Color(0xFFE25C7E) : Color(0xFFE5E7EA),
@@ -453,12 +537,19 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
   }
 
   String _getButtonText() {
-    if (currentState == 0) {
+    bool hasAnyItem =
+        hasTopUploaded ||
+        hasBottomUploaded ||
+        hasFootwearUploaded ||
+        hasAccessoriesUploaded;
+    bool hasOccasion = _occasionController.text.trim().isNotEmpty;
+
+    if (!hasAnyItem) {
       return 'Upload at least one item to get started!';
-    } else if (currentState == 1) {
-      return 'Done uploading? Let\'s style!';
-    } else {
+    } else if (hasAnyItem && !hasOccasion) {
       return 'Add your occasion to let Zuri style you!';
+    } else {
+      return 'Done uploading? Let\'s style!';
     }
   }
 }

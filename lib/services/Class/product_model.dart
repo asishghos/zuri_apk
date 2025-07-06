@@ -1,39 +1,39 @@
-class ProductClass {
-  final String? keyword;
-  final String? platform;
-  final String? title;
-  final String? originalLink;
-  final String? affiliatedLink;
-  final String? thumbnail;
+class ProductItem {
+  final String keyword;
+  final String source;
+  final String title;
+  final String price;
+  final String rating; // keep it string for display purposes
+  final String productId;
 
-  ProductClass({
-    this.keyword,
-    this.platform,
-    this.title,
-    this.originalLink,
-    this.affiliatedLink,
-    this.thumbnail,
+  ProductItem({
+    required this.keyword,
+    required this.source,
+    required this.title,
+    required this.price,
+    required this.rating,
+    required this.productId,
   });
 
-  factory ProductClass.fromJson(Map<String, dynamic> json) {
-    return ProductClass(
-      keyword: json['keyword'] as String?,
-      platform: json['platform'] as String?,
-      title: json['title'] as String?,
-      originalLink: json['original_link'] as String?,
-      affiliatedLink: json['affiliated_link'] as String?,
-      thumbnail: json['thumbnail'] as String?,
+  factory ProductItem.fromJson(Map<String, dynamic> json) {
+    return ProductItem(
+      keyword: json['keyword'] ?? '',
+      source: json['source'] ?? '',
+      title: json['title'] ?? '',
+      price: json['price']?.toString() ?? '',
+      rating: json['rating']?.toString() ?? '',
+      productId: json['product_id']?.toString() ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'keyword': keyword,
-      'platform': platform,
+      'source': source,
       'title': title,
-      'original_link': originalLink,
-      'affiliated_link': affiliatedLink,
-      'thumbnail': thumbnail,
+      'price': price,
+      'rating': rating,
+      'product_id': productId,
     };
   }
 }

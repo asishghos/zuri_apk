@@ -3,6 +3,7 @@ import 'dart:developer' as Developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -81,6 +82,7 @@ class _StyleAnalysisPageState extends State<StyleAnalysisPage> {
               undertoneString: response?.bodyShapeResult?.skinTone ?? '',
             );
       } else {
+        context.goNamed('home2');
         Developer.log("❌ Data not coming from TempUserDataStore.dart");
         showErrorSnackBar(
           context,

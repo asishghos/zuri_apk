@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
 
 // Model class for chat history item
 class ChatHistoryItem {
@@ -218,12 +219,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
 
   // Loading state
   Widget _buildLoadingState() {
-    return const Center(
-      child: CircularProgressIndicator(
-        color: AppColors.textPrimary,
-        strokeWidth: 2,
-      ),
-    );
+    return LoadingPage();
   }
 
   // Error state

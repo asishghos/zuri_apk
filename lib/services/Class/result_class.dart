@@ -2,7 +2,7 @@ import 'package:testing2/services/Class/product_model.dart';
 import 'package:testing2/services/DataSource/weather_api.dart';
 
 class ResultCache {
-  static List<ProductClass>? productData = [];
+  // static List<ProductItem>? productData = [];
   static String? seasonData;
   static List<String>? loactiondata;
   static String? selectedBodyShape;

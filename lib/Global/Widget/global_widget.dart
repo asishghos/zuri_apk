@@ -416,7 +416,6 @@ Future<void> showGlobalDeleteConfirmationDialog({
                 Navigator.of(context).pop();
               } catch (e) {
                 Navigator.of(context).pop();
-                // You can show error snackbar here if needed
               }
             },
             style: ElevatedButton.styleFrom(

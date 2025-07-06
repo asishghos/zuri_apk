@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/services/Class/styling_model.dart';
 
 class BadItemsPage extends StatefulWidget {
-  final List<BadItemReason?> badItems;
+  final List<ImageWithDescription?> badItems;
 
   const BadItemsPage({Key? key, required this.badItems}) : super(key: key);
 
@@ -25,6 +24,8 @@ class _BadItemsPageState extends State<BadItemsPage> {
 
   @override
   Widget build(BuildContext context) {
+    double dh = MediaQuery.of(context).size.height;
+    double dw = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -44,11 +45,11 @@ class _BadItemsPageState extends State<BadItemsPage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         child: Column(
           children: [
             Text(
-              "Uh-oh! This one's not quite a fit.",
+              "Oh, Babe! Cute, but not quite the mood",
               style: GoogleFonts.libreFranklin(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -57,7 +58,7 @@ class _BadItemsPageState extends State<BadItemsPage> {
             ),
             SizedBox(height: 8),
             Text(
-              "Want to reload or swipe to see what Zuri thinks suits you better?",
+              "Let’s remix it into something more event-appropriate\n (and still very you!)",
               style: GoogleFonts.libreFranklin(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -65,7 +66,8 @@ class _BadItemsPageState extends State<BadItemsPage> {
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 24),
-            Expanded(
+            Container(
+              height: dh * 0.65,
               child: PageView.builder(
                 controller: _pageController,
                 onPageChanged: (index) {
@@ -83,16 +85,16 @@ class _BadItemsPageState extends State<BadItemsPage> {
                           width: double.infinity,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(16),
-                            color: Colors.grey[100],
+                            color: Colors.white,
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(16),
                             child: Image.network(
-                              badItem.imageUrl,
-                              fit: BoxFit.cover,
+                              badItem.image,
+                              fit: BoxFit.fill,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
-                                  color: Colors.grey[200],
+                                  color: Colors.white,
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -119,16 +121,7 @@ class _BadItemsPageState extends State<BadItemsPage> {
                       ),
                       SizedBox(height: 16),
                       Text(
-                        badItem.itemType,
-                        style: GoogleFonts.libreFranklin(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.titleTextColor,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        badItem.reason,
+                        badItem.description,
                         style: GoogleFonts.libreFranklin(
                           fontSize: 14,
                           color: Colors.grey[600],

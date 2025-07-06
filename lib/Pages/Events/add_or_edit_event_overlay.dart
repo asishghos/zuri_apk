@@ -1,12 +1,11 @@
 import 'dart:developer' as Developer;
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:intl/intl.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
-import 'package:testing2/services/Class/EventsModel/update_event_model.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/services/Class/event_model.dart';
 import 'package:testing2/services/DataSource/event_api_service.dart';
 
@@ -148,7 +147,6 @@ class _AddEventOverlayState extends State<AddEventOverlay> {
       selectedOccasion = 'Others';
       _customOccasionController.text = data.occasion;
     }
-    // Assuming startDate is a String or DateTime, adjust as per your model
     startDate = data.startDate is String
         ? DateTime.parse(data.startDate.toString())
         : data.startDate;
@@ -156,38 +154,41 @@ class _AddEventOverlayState extends State<AddEventOverlay> {
         ? DateTime.parse(data.endDate.toString())
         : data.endDate;
     _isMultiDay = data.isMultiDay == true;
-    if (_isMultiDay && data.daySpecificData is Map) {
-      List<DaySpecificDetails> dayData = List<DaySpecificDetails>.from(
-        data.daySpecificData,
-      );
+
+    if (_isMultiDay && data.daySpecificData.isNotEmpty) {
       daySpecificData.clear();
-      for (final entry in dayData) {
-        String dateStr = entry.date
-            .toString(); // Assuming DaySpecificDetails has a 'date' property
-        DaySpecificDetails eventData =
-            entry; // Assuming DaySpecificDetails has a 'data' property
-        DateTime date = DateTime.parse(dateStr);
+      _multiDayEvents.clear();
+      for (var dayData in data.daySpecificData) {
+        DateTime date = dayData.date;
+        _initializeDayData(date);
         daySpecificData[date] = {
-          'event': eventData.eventName,
-          'time': eventData.eventTime,
-          'location': eventData.location,
-          'description': eventData.description,
-          'reminder': eventData.reminder.text,
-          'reminderValue': eventData.reminder.value,
-          'reminderType': eventData.reminder.type,
+          'event': dayData.eventName ?? '',
+          'time': dayData.eventTime ?? '00:00 AM',
+          'location': dayData.location ?? '',
+          'description': dayData.description ?? '',
+          'reminder': dayData.reminder.text ?? '1 day before',
+          'reminderValue': dayData.reminder.value ?? 1,
+          'reminderType': dayData.reminder.type ?? 'Days before',
         };
+        _multiDayEvents.add(
+          MultiDayEventData(
+              date: date,
+              reminderValue: dayData.reminder.value ?? 1,
+              reminderType: dayData.reminder.type ?? 'Days before',
+            )
+            ..eventController.text = dayData.eventName ?? ''
+            ..timeController.text = dayData.eventTime ?? '00:00 AM'
+            ..locationController.text = dayData.location ?? ''
+            ..descriptionController.text = dayData.description ?? ''
+            ..reminderController.text = dayData.reminder.text ?? '1 day before',
+        );
       }
-      if (daySpecificData.isNotEmpty) {
-        selectedPlanDate = daySpecificData.keys.first;
-        _loadDataForSelectedDay(selectedPlanDate!);
-      }
-      // No need to set _eventController.text for multi-day events
-      _initializeMultiDayEvents();
+      selectedPlanDate = startDate;
+      _loadDataForSelectedDay(selectedPlanDate!);
     } else {
       _timeController.text = data.singleDayDetails?.eventTime ?? '00:00 AM';
-      _locationController.text = data.singleDayDetails?.location ?? 'Location';
-      _descriptionController.text =
-          data.singleDayDetails?.description ?? 'Description';
+      _locationController.text = data.singleDayDetails?.location ?? '';
+      _descriptionController.text = data.singleDayDetails?.description ?? '';
       _reminderController.text =
           data.singleDayDetails?.reminder.text ?? '1 day before';
       _reminderValue = data.singleDayDetails?.reminder.value ?? 1;
@@ -351,18 +352,20 @@ class _AddEventOverlayState extends State<AddEventOverlay> {
     if (picked != null) {
       setState(() {
         if (isStart) {
-          startDate = picked;
+          // Ensure we're using the exact date without time manipulation
+          startDate = DateTime(picked.year, picked.month, picked.day);
           if (endDate!.isBefore(startDate!)) {
-            endDate = startDate;
+            endDate = DateTime(picked.year, picked.month, picked.day);
           }
         } else {
-          endDate = picked;
+          // Ensure we're using the exact date without time manipulation
+          endDate = DateTime(picked.year, picked.month, picked.day);
         }
         _isMultiDay = isMultiDayEvent;
         daySpecificData.clear();
-        _initializeDayData(startDate!); // Initialize data for start date
-        _initializeMultiDayEvents(); // Reinitialize multi-day events
-        selectedPlanDate = startDate; // Update selectedPlanDate to start date
+        _initializeDayData(startDate!);
+        _initializeMultiDayEvents();
+        selectedPlanDate = startDate;
       });
     }
   }
@@ -438,11 +441,17 @@ class _AddEventOverlayState extends State<AddEventOverlay> {
           occasion: selectedOccasion == 'Others'
               ? _customOccasionController.text.trim()
               : selectedOccasion,
-          startDate: startDate!,
-          endDate: endDate!,
+          startDate: DateTime.utc(
+            startDate!.year,
+            startDate!.month,
+            startDate!.day,
+          ),
+          endDate: DateTime.utc(endDate!.year, endDate!.month, endDate!.day),
+
           daySpecificData: daySpecificData,
           timezone: _selectedTimezone,
         );
+        Developer.log("Sending startDate: ${startDate!.toIso8601String()}");
       } else {
         eventRequest = EventApiService.createSingleDayEvent(
           title: _titleController.text.trim(),
@@ -469,10 +478,13 @@ class _AddEventOverlayState extends State<AddEventOverlay> {
           eventId: widget.eventData!.event.id,
           request: eventRequest,
         );
-        // Send updated event to EventDetailsPage via callback if provided
+        // Call callback BEFORE navigation
         if (widget.onEventUpdatedCallBack != null &&
             response is EventResponse) {
           widget.onEventUpdatedCallBack!(response);
+        } else {
+          // If no callback provided, call the general callback
+          widget.onEventUpdated?.call();
         }
       } else {
         response = await EventApiService.addEvent(eventRequest);
@@ -490,9 +502,13 @@ class _AddEventOverlayState extends State<AddEventOverlay> {
         // Call the callback to notify parent
         widget.onEventUpdated?.call();
 
-        // Close the modal and return success
-        Navigator.pop(context, true);
-        // context.goNamed('events'); // Navigate to events page
+        // Close the modal - this should work for both single and multiday
+        Future.delayed(Duration.zero, () {
+          Navigator.of(context).pop(true);
+          if (_isMultiDay) {
+            Navigator.of(context).pop(true);
+          }
+        });
       }
     } catch (e) {
       Developer.log("Error in _submitEvent: $e");
@@ -515,126 +531,131 @@ class _AddEventOverlayState extends State<AddEventOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.9,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+    return isLoading
+        ? LoadingPage()
+        : Container(
+            height: MediaQuery.of(context).size.height * 0.9,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
               ),
             ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+            child: Form(
+              key: _formKey,
+              child: Column(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Color(0xFF141B34),
-                          width: 1.5,
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Color(0xFF141B34),
+                                width: 1.5,
+                              ),
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              size: 20,
+                              color: Color(0xFF141B34),
+                            ),
+                          ),
                         ),
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        size: 20,
-                        color: Color(0xFF141B34),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTitleField(),
+                          SizedBox(height: 20),
+                          _buildOccasionSection(),
+                          SizedBox(height: 20),
+                          _buildDateSection(),
+                          SizedBox(height: 20),
+                          if (_isMultiDay) ...[
+                            _buildPlanForSection(),
+                            SizedBox(height: 20),
+                            _buildEventField(),
+                            SizedBox(height: 20),
+                          ],
+                          _buildTimeField(),
+                          SizedBox(height: 20),
+                          _buildLocationField(),
+                          SizedBox(height: 20),
+                          _buildDescriptionField(),
+                          SizedBox(height: 20),
+                          _buildReminderField(),
+                          SizedBox(height: 20),
+                        ],
                       ),
                     ),
                   ),
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: (areRequiredFieldsFilled)
+                            ? _submitEvent
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: areRequiredFieldsFilled
+                              ? Color(0xFFE25C7E)
+                              : Color(0xFF6B7280),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                          elevation: 0,
+                        ),
+                        child:
+                            // isLoading
+                            //     ? SizedBox(
+                            //         height: 20,
+                            //         width: 20,
+                            //         child: CircularProgressIndicator(
+                            //           color: Colors.white,
+                            //           strokeWidth: 2,
+                            //         ),
+                            //       )
+                            Text(
+                              (widget.isEditMode) ? 'Update' : 'Save',
+                              style: GoogleFonts.libreFranklin(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
                 ],
               ),
             ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildTitleField(),
-                    SizedBox(height: 20),
-                    _buildOccasionSection(),
-                    SizedBox(height: 20),
-                    _buildDateSection(),
-                    SizedBox(height: 20),
-                    if (_isMultiDay) ...[
-                      _buildPlanForSection(),
-                      SizedBox(height: 20),
-                      _buildEventField(),
-                      SizedBox(height: 20),
-                    ],
-                    _buildTimeField(),
-                    SizedBox(height: 20),
-                    _buildLocationField(),
-                    SizedBox(height: 20),
-                    _buildDescriptionField(),
-                    SizedBox(height: 20),
-                    _buildReminderField(),
-                    SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.all(16),
-              child: SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: (areRequiredFieldsFilled) ? _submitEvent : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: areRequiredFieldsFilled
-                        ? Color(0xFFE25C7E)
-                        : Color(0xFF6B7280),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(32),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: isLoading
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          (widget.isEditMode) ? 'Update' : 'Save',
-                          style: GoogleFonts.libreFranklin(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
+          );
   }
 
   void _showReminderDialog() {

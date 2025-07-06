@@ -11,14 +11,14 @@ import 'package:testing2/services/api_routes.dart';
 class SavedFavouritesService {
   // POST: Add to Saved Favourites
   static Future<SavedFavouriteResponse?> addToSavedFavourites({
-    required String imageB64,
+    required String imageUrl,
     required String tag,
     required String occasion,
     required String description,
   }) async {
     final url = Uri.parse(ApiRoutes.addFavouriteSavedFavourites);
     // Convert base64 image to File
-    final File imageFile = await GlobalFunction.base64ToFile(imageB64);
+    final File imageFile = await GlobalFunction.urlToFile(imageUrl);
 
     final request = http.MultipartRequest('POST', url)
       ..headers.addAll(await AuthApiService.getHeaders(includeAuth: true))

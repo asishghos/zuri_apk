@@ -118,17 +118,18 @@ class _ZuriVideoScreenState extends State<ZuriVideoScreen> {
         Developer.log(
           "✅ Token found and user is logged in. Validating with backend...",
         );
-        final isValid = await AuthApiService.validateToken();
+        context.goNamed('home2');
+        // final isValid = await AuthApiService.validateToken();
 
-        if (isValid) {
-          Developer.log("✅ Token is valid, navigating to home2");
-          context.goNamed('home2');
-        } else {
-          Developer.log("❌ Token invalid. Clearing tokens and going to home");
-          await prefs.remove('access_token');
-          await prefs.remove('refresh_token');
-          context.goNamed('home');
-        }
+        // if (isValid) {
+        //   Developer.log("✅ Token is valid, navigating to home2");
+        //   context.goNamed('home2');
+        // } else {
+        //   Developer.log("❌ Token invalid. Clearing tokens and going to home");
+        //   await prefs.remove('access_token');
+        //   await prefs.remove('refresh_token');
+        //   context.goNamed('home');
+        // }
       } else {
         Developer.log("🚫 Not logged in or token empty. Navigating to home");
         context.goNamed('home');

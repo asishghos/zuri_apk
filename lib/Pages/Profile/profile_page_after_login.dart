@@ -11,6 +11,7 @@ import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/Pages/Profile/support_page.dart';
 import 'package:testing2/Pages/Saved/saved_fav_page.dart';
+import 'package:testing2/Pages/uploaded_look_page.dart/uploaded_look_page.dart';
 import 'package:testing2/services/Class/auth_model.dart';
 import 'package:testing2/services/Class/result_class.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
@@ -237,7 +238,7 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
                                     ),
                                     Text(
                                       "  |  ",
-                                      style: TextStyle(
+                                      style: GoogleFonts.libreFranklin(
                                         color: Color(0xFFF3F4F6),
                                       ),
                                     ),
@@ -256,7 +257,7 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
                                     ),
                                     Text(
                                       "  |  ",
-                                      style: TextStyle(
+                                      style: GoogleFonts.libreFranklin(
                                         color: Color(0xFFF3F4F6),
                                       ),
                                     ),
@@ -303,7 +304,16 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
                           title: 'Uploaded Looks',
                           subtitle:
                               "Your best angles you've uploaded - in one spot!",
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return UploadedLookPage();
+                                },
+                              ),
+                            );
+                          },
                           pinkSubtitle: false,
                         ),
                         _buildDivider(width: dw * 0.05),
@@ -550,10 +560,10 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
                 color: AppColors.titleTextColor,
-                size: 32,
+                size: 28,
               ),
             ],
           ),

@@ -1,14 +1,18 @@
 import 'dart:developer' as Developer;
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:table_calendar/table_calendar.dart';
 // import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
+import 'package:testing2/Global/Widget/global_dialogbox.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Pages/Events/scrollable_calendar_widget.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/services/Class/event_model.dart';
+import 'package:testing2/services/DataSource/auth_api.dart';
 import 'package:testing2/services/DataSource/event_api_service.dart';
 import 'event_details_screen.dart';
 import 'add_or_edit_event_overlay.dart';
@@ -24,7 +28,6 @@ class CalendarEventsPage extends StatefulWidget {
 class _CalendarEventsPageState extends State<CalendarEventsPage> {
   String username = '';
   List<Event> eventsList = [];
-  bool isLoading = true;
   bool isCalendarExpanded = false;
   DateTime selectedDay = DateTime.now();
   DateTime focusedDay = DateTime.now();
@@ -36,17 +39,46 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
     DateTime.utc(2024, 11, 25): ['Holiday Event'],
   };
 
+  bool _isLoggedIn = true; // Add this state variable
+  bool _isloading = true; // Add loading state
+
+  // Replace the _checkLoginStatus method:
+  void _checkLoginStatus() async {
+    setState(() {
+      _isloading = true;
+    });
+    try {
+      final isLoggedIn = await AuthApiService.isLoggedIn();
+      setState(() {
+        _isLoggedIn = isLoggedIn;
+      });
+
+      // Only fetch events if logged in
+      if (isLoggedIn) {
+        await _fetchUserEvents();
+      }
+    } catch (e) {
+      setState(() {
+        _isLoggedIn = false;
+      });
+    } finally {
+      setState(() {
+        _isloading = false;
+      });
+    }
+  }
+
+  // Replace the initState method:
   @override
   void initState() {
     super.initState();
-    _fetchUserEvents();
+    _checkLoginStatus();
   }
 
   Future<void> _fetchUserEvents() async {
-    setState(() => isLoading = true);
+    setState(() => _isloading = true);
     try {
       final result = await EventApiService.getUpcomingEvents();
-      // Developer.log(result.events.toString());
       setState(() {
         eventsList = result.message == "Upcoming events fetched successfully"
             ? result.events
@@ -60,9 +92,11 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
         context,
         'Error occurred while fetching events. ${e}',
       );
-      setState(() => eventsList = []);
+      setState(() {
+        eventsList = [];
+      });
     } finally {
-      setState(() => isLoading = false);
+      setState(() => _isloading = false);
     }
   }
 
@@ -117,20 +151,41 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
   Widget build(BuildContext context) {
     final double dh = MediaQuery.of(context).size.height;
     final double dw = MediaQuery.of(context).size.width;
+
+    if (_isloading) {
+      return LoadingPage();
+    }
     return SafeArea(
-      child: Column(
+      child: Stack(
         children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : eventsList.isEmpty
-                  ? _buildEmptyEventsUI(dh: dh, dw: dw)
-                  : _buildEventsListUI(dh: dh),
-            ),
+          Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: eventsList.isEmpty
+                      ? _buildEmptyEventsUI(dh: dh, dw: dw)
+                      : _buildEventsListUI(dh: dh),
+                ),
+              ),
+            ],
           ),
+          if (!_isLoggedIn)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(
+                child: GlobalDialogBox(
+                  title: "Please Sign Up to Continue",
+                  description: "kqsxk sxkjbas kjhsaxjk",
+                  buttonNeed: true,
+                  buttonText: "Click to Scan and Sign Up",
+                  onTap: () {
+                    context.goNamed('scan&discover');
+                  },
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -410,7 +465,8 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
     final String eventTitle = event.title;
     final String eventStartDate = formatDate(event.startDate);
     final String eventEndDate = formatDate(event.endDate);
-    final bool isMultiDay = eventStartDate != eventEndDate;
+    final bool isMultiDay =
+        event.isMultiDay; // Use the isMultiDay flag directly
 
     // --- Safely get eventTime ---
     final String eventTime =
@@ -635,8 +691,9 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
           eventData: response,
           onEventUpdated: _refreshEventData,
           onEventDeleted: () async {
-            Navigator.pop(context); // close delete confirmation modal
-            Navigator.pop(context); // Close details modal
+            Navigator.pop(context);
+            // Navigator.pop(context);
+            await _refreshEventData();
           },
         );
       },
@@ -802,7 +859,8 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
   }
 
   void _showAddEventOverlay() {
-    showModalBottomSheet<void>(
+    showModalBottomSheet<bool>(
+      // Change to return bool
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -817,28 +875,18 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
         ),
         child: AddEventOverlay(
           isEditMode: false,
-          onSave: () async {
-            // Wait a bit to ensure the API call completes
-            await Future.delayed(const Duration(milliseconds: 500));
-
-            // Don't pop here - let AddEventOverlay handle it
-            // Navigator.pop(context);
-
-            // Refresh the data
-            _refreshEventData();
-          },
-          onEventUpdated: () async {
-            // This callback is for when the event is successfully created/updated
-            Developer.log("Event updated callback triggered");
-            _refreshEventData();
+          onEventUpdated: () {
+            // Navigator.pop(context, true);
+            Developer.log("Event created callback triggered");
           },
         ),
       ),
-    ).then((_) {
-      // This runs when the modal is dismissed
-      // Always refresh when modal closes
-      Developer.log("Add event modal dismissed - refreshing data");
-      _refreshEventData();
+    ).then((result) {
+      // Only refresh if the event was actually created
+      if (result == true) {
+        Developer.log("Add event modal closed with success - refreshing data");
+        _refreshEventData();
+      }
     });
   }
 }

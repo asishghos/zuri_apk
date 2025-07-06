@@ -8,6 +8,7 @@ class GlobalDialogBox extends StatelessWidget {
   final String? buttonText;
   final VoidCallback? onTap;
   final bool buttonNeed;
+  final bool? needCancleButton;
   GlobalDialogBox({
     Key? key,
     required this.title,
@@ -15,12 +16,13 @@ class GlobalDialogBox extends StatelessWidget {
     this.buttonText,
     this.onTap,
     required this.buttonNeed,
+    this.needCancleButton,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32.0)),
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: _buildDialogContent(context),
@@ -32,38 +34,41 @@ class GlobalDialogBox extends StatelessWidget {
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15.0),
+        borderRadius: BorderRadius.circular(32.0),
         border: Border.all(color: const Color(0xFFFBC8CF), width: 1.5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Align(
-            alignment: Alignment.topRight,
-            child: InkWell(
-              onTap: () {
-                Navigator.of(context).pop(); // Dismiss the dialog when tapped
-              },
-              child: Container(
-                padding: const EdgeInsets.all(5.0),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle, // Circular shape for the close button
-                  border: Border.all(
-                    color: const Color(
-                      0xFFE91E63,
-                    ), // Pink border for the circle
-                    width: 1.5,
+          if (needCancleButton == true)
+            Align(
+              alignment: Alignment.topRight,
+              child: InkWell(
+                onTap: () {
+                  Navigator.of(context).pop(); // Dismiss the dialog when tapped
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(5.0),
+                  decoration: BoxDecoration(
+                    shape:
+                        BoxShape.circle, // Circular shape for the close button
+                    border: Border.all(
+                      color: const Color(
+                        0xFFE91E63,
+                      ), // Pink border for the circle
+                      width: 1.5,
+                    ),
                   ),
-                ),
-                child: const Icon(
-                  Icons.close, // The 'X' icon
-                  color: Color(0xFFD34169), // Pink color for the icon
-                  size: 14,
+                  child: const Icon(
+                    Icons.close, // The 'X' icon
+                    color: Color(0xFFD34169), // Pink color for the icon
+                    size: 14,
+                  ),
                 ),
               ),
             ),
-          ),
+
           const SizedBox(height: 15), // Vertical space
           // "Uh Oh!" title
           Text(
@@ -97,7 +102,7 @@ class GlobalDialogBox extends StatelessWidget {
                     Colors.white, // White text color for the button
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(
-                    12.0,
+                    32.0,
                   ), // Rounded corners for the button
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 14.0),

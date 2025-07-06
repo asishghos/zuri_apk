@@ -114,6 +114,7 @@ class _ScanDiscoverPageState extends State<ScanDiscoverPage> {
             builder: (BuildContext context) {
               return GlobalDialogBox(
                 title: "Uh Oh!",
+                needCancleButton: true,
                 buttonNeed: true,
                 description:
                     "We can't see your FULL FAB self. Upload head-to-toe pic(s) so we can scan your shape like a pro. Pretty please?",
@@ -254,6 +255,46 @@ class _ScanDiscoverPageState extends State<ScanDiscoverPage> {
                         },
                         text: "Or choose from infographic",
                       ),
+                      const SizedBox(height: 24),
+                      // Login link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Already Have an Account? ',
+                            style: GoogleFonts.libreFranklin(
+                              color: Color(0xFF9EA2AE),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              // Handle login
+                              context.goNamed(
+                                'login',
+                                extra: "without signup, came from SignUp page",
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Login Here',
+                              style: GoogleFonts.libreFranklin(
+                                color: Color(0xFF2563EB),
+                                fontSize: 14,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Color(0xFF2563EB),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
                       const SizedBox(height: 10),
                       TextButton(
                         onPressed: () {

@@ -1,54 +1,187 @@
+import 'dart:developer' as Developer;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
+import 'package:testing2/Global/Widget/global_dialogbox.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
+import 'package:testing2/services/Class/digital_wardrobe_model.dart';
+import 'package:testing2/services/DataSource/auth_api.dart';
+import 'package:testing2/services/DataSource/digital_wardrobe_api.dart';
 
 class MywardrobePage extends StatefulWidget {
+  final bool? isDialogBoxOpen;
+  final String? occasion;
+  final String? description;
+  final String? eventId;
+  final String? loaction;
+
+  const MywardrobePage({
+    super.key,
+    this.isDialogBoxOpen,
+    this.occasion,
+    this.description,
+    this.eventId,
+    this.loaction,
+  });
   @override
   _MywardrobePageState createState() => _MywardrobePageState();
 }
 
 class _MywardrobePageState extends State<MywardrobePage> {
   final TextEditingController _occasionController = TextEditingController();
+  bool _isLoggedIn = true;
+  bool _isCheckingAuth = true;
+
+  void _checkLoginStatus() async {
+    try {
+      final isLoggedIn = await AuthApiService.isLoggedIn();
+      // Check if widget is still mounted before calling setState
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = isLoggedIn;
+          _isCheckingAuth = false;
+        });
+      }
+    } catch (e) {
+      // Check if widget is still mounted before calling setState
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = false;
+          _isCheckingAuth = false;
+        });
+      }
+    }
+  }
+
+  Future<CategoryCounts> _getCategoryCounts() async {
+    final result = await WardrobeApiService.fetchCategoryCounts();
+    if (result != null) {
+      Developer.log(result.counts.toString());
+      return result;
+    } else {
+      Developer.log("❌ Couldn't fetch category counts");
+      return CategoryCounts(counts: {});
+    }
+  }
+
   @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+    // Use WidgetsBinding to ensure dialog shows after build completes
+    if (widget.isDialogBoxOpen != null &&
+        widget.isDialogBoxOpen! &&
+        widget.isDialogBoxOpen == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => _buildCustomPopup1(context),
+          );
+        }
+      });
+      _occasionController.text = widget.occasion!;
+    }
+  }
+
+  @override
+  void dispose() {
+    _occasionController.dispose();
+    super.dispose();
+  }
+
   Widget build(BuildContext context) {
     double dh = MediaQuery.of(context).size.height;
     double dw = MediaQuery.of(context).size.width;
+
+    if (_isCheckingAuth) {
+      return LoadingPage();
+    }
     return SafeArea(
-      child: Column(
+      child: Stack(
         children: [
-          // Fixed Header Section
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Header Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            children: [
+              // Fixed Header Section
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(20),
+                child: Column(
                   children: [
+                    // Header Section
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(width: 12),
-                        Text.rich(
-                          TextSpan(
-                            children: [
+                        Row(
+                          children: [
+                            const SizedBox(width: 12),
+                            Text.rich(
                               TextSpan(
-                                text: 'Zuri',
-                                style: GoogleFonts.libreFranklin(
-                                  color: AppColors.titleTextColor,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
+                                children: [
+                                  TextSpan(
+                                    text: 'Zuri',
+                                    style: GoogleFonts.libreFranklin(
+                                      color: AppColors.titleTextColor,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: " Closet",
+                                    style: GoogleFonts.libreFranklin(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          width: 45,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFEBEB),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Color(0xFFD34169),
+                              width: 0.63,
+                            ),
+                          ),
+                          child: Stack(
+                            children: [
+                              const Center(
+                                child: HugeIcon(
+                                  icon: HugeIcons.strokeRoundedNotification01,
+                                  color: AppColors.textPrimary,
+                                  size: 28,
                                 ),
                               ),
-                              TextSpan(
-                                text: " Closet",
-                                style: GoogleFonts.libreFranklin(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
+                              Positioned(
+                                top: 5,
+                                right: 5,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.titleTextColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '4',
+                                      style: GoogleFonts.libreFranklin(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -56,247 +189,226 @@ class _MywardrobePageState extends State<MywardrobePage> {
                         ),
                       ],
                     ),
-                    Container(
-                      width: 45,
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEBEB),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Color(0xFFD34169),
-                          width: 0.63,
+                    const SizedBox(height: 24),
+                    // Action Buttons Row
+                    Row(
+                      children: [
+                        GlobalPinkButton(
+                          text: "My Zuri Closet",
+                          onPressed: () {},
+                          width: dw * 0.4328,
+                          height: 42,
+                          fontSize: 13.45,
+                          leftIcon: true,
+                          leftIconData: HugeIcons.strokeRoundedHanger,
                         ),
-                      ),
-                      child: Stack(
+                        SizedBox(width: 12),
+                        GlobalTextButton(
+                          text: "Create wow looks",
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => _buildCustomPopup1(context),
+                            );
+                          },
+                          width: dw * 0.4328,
+                          height: 42,
+                          fontSize: 13.45,
+                          leftIcon: true,
+                          leftIconData: HugeIcons.strokeRoundedAdd01,
+                          borderWidth: 1,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                  ],
+                ),
+              ),
+              // Scrollable Content
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    children: [
+                      // Category Grid
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        // childAspectRatio: 1.1,
                         children: [
-                          const Center(
-                            child: HugeIcon(
-                              icon: HugeIcons.strokeRoundedNotification01,
-                              color: AppColors.textPrimary,
-                              size: 28,
+                          _buildCategoryCard(
+                            'Tops',
+                            dh,
+                            dw,
+                            '(10 Items)',
+                            Icons.checkroom,
+                            () {
+                              context.goNamed('allItemsWardrobe', extra: 2);
+                            },
+                          ),
+                          _buildCategoryCard(
+                            'Bottoms',
+                            dh,
+                            dw,
+                            '(11 Items)',
+                            Icons.ac_unit_sharp,
+                            () {
+                              context.goNamed('allItemsWardrobe', extra: 3);
+                            },
+                          ),
+                          _buildCategoryCard(
+                            'Ethnic',
+                            dh,
+                            dw,
+                            '(19 Items)',
+                            Icons.accessibility,
+                            () {
+                              context.goNamed('allItemsWardrobe', extra: 4);
+                            },
+                          ),
+                          _buildCategoryCard(
+                            'Footwear',
+                            dh,
+                            dw,
+                            '(5 Items)',
+                            Icons.shopping_bag,
+                            () {
+                              context.goNamed('allItemsWardrobe', extra: 8);
+                            },
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 24),
+
+                      // Browse All Items Button
+                      GlobalTextButton(
+                        text: "Browse All Item(s)",
+                        onPressed: () {
+                          context.goNamed('allItemsWardrobe', extra: 0);
+                        },
+                      ),
+                      SizedBox(height: 16),
+
+                      // Add New Item Button
+                      GlobalPinkButton(
+                        text: "Add New Item",
+                        onPressed: () {
+                          context.goNamed(
+                            'uploadImageWardrobe',
+                            extra: 'fromMyWardrobe',
+                          );
+                        },
+                        leftIcon: true,
+                        leftIconData: HugeIcons.strokeRoundedAdd01,
+                      ),
+                      SizedBox(height: 32),
+
+                      // Personalized Recommendations Section
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Personalized recommendations',
+                            style: GoogleFonts.libreFranklin(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF000000),
                             ),
                           ),
-                          Positioned(
-                            top: 5,
-                            right: 5,
-                            child: Container(
-                              width: 16,
-                              height: 16,
-                              decoration: const BoxDecoration(
-                                color: AppColors.titleTextColor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '4',
-                                  style: GoogleFonts.libreFranklin(
-                                    color: Colors.white,
-                                    fontSize: 8,
-                                  ),
-                                ),
+                          TextButton(
+                            onPressed: () {},
+                            child: Text(
+                              'View All',
+                              style: GoogleFonts.libreFranklin(
+                                color: Color(0xFF2563EB),
+                                fontSize: 14,
+                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                // Action Buttons Row
-                Row(
-                  children: [
-                    GlobalPinkButton(
-                      text: "Closet",
-                      onPressed: () {},
-                      width: dw * 0.4328,
-                      height: 42,
-                      fontSize: 13.45,
-                      leftIcon: true,
-                      leftIconData: HugeIcons.strokeRoundedHanger,
-                    ),
-                    SizedBox(width: 12),
-                    GlobalTextButton(
-                      text: "Create outfits",
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => _buildCustomPopup1(context),
-                        );
-                      },
-                      width: dw * 0.4328,
-                      height: 42,
-                      fontSize: 13.45,
-                      leftIcon: true,
-                      leftIconData: HugeIcons.strokeRoundedAdd01,
-                      borderWidth: 1,
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-              ],
-            ),
-          ),
-          // Scrollable Content
-          Expanded(
-            child: SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                children: [
-                  // Category Grid
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    // childAspectRatio: 1.1,
-                    children: [
-                      _buildCategoryCard(
-                        'Tops',
-                        dh,
-                        dw,
-                        '(10 Items)',
-                        Icons.checkroom,
-                        () {
-                          context.goNamed('allItemsWardrobe', extra: 2);
-                        },
-                      ),
-                      _buildCategoryCard(
-                        'Bottoms',
-                        dh,
-                        dw,
-                        '(11 Items)',
-                        Icons.ac_unit_sharp,
-                        () {
-                          context.goNamed('allItemsWardrobe', extra: 3);
-                        },
-                      ),
-                      _buildCategoryCard(
-                        'Ethnic',
-                        dh,
-                        dw,
-                        '(19 Items)',
-                        Icons.accessibility,
-                        () {
-                          context.goNamed('allItemsWardrobe', extra: 4);
-                        },
-                      ),
-                      _buildCategoryCard(
-                        'Footwear',
-                        dh,
-                        dw,
-                        '(5 Items)',
-                        Icons.shopping_bag,
-                        () {
-                          context.goNamed('allItemsWardrobe', extra: 8);
-                        },
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 24),
+                      SizedBox(height: 8),
 
-                  // Browse All Items Button
-                  GlobalTextButton(
-                    text: "Browse All Item(s)",
-                    onPressed: () {
-                      context.goNamed('allItemsWardrobe', extra: 0);
-                    },
-                  ),
-                  SizedBox(height: 16),
-
-                  // Add New Item Button
-                  GlobalPinkButton(
-                    text: "Add New Item",
-                    onPressed: () {
-                      context.goNamed(
-                        'uploadImageWardrobe',
-                        extra: 'fromMyWardrobe',
-                      );
-                    },
-                    leftIcon: true,
-                    leftIconData: HugeIcons.strokeRoundedAdd01,
-                  ),
-                  SizedBox(height: 32),
-
-                  // Personalized Recommendations Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Personalized recommendations',
-                        style: GoogleFonts.libreFranklin(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF000000),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {},
-                        child: Text(
-                          'View All',
-                          style: GoogleFonts.libreFranklin(
-                            color: Color(0xFF2563EB),
-                            fontSize: 14,
-                            decoration: TextDecoration.underline,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text.rich(
+                          TextSpan(
+                            text:
+                                'Based on what complements your closet and you ❤️',
+                            style: GoogleFonts.libreFranklin(
+                              color: Color(0xFF6D717F),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
+                      SizedBox(height: 16),
+
+                      // Recommendation Cards
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.60,
+                        children: [
+                          _buildProductCard(
+                            'assets/images/home2/h6.png',
+                            'Blue Kurta',
+                            '₹1,299',
+                            '₹363',
+                            '72%',
+                            'Amazon.in',
+                            dh,
+                          ),
+                          _buildProductCard(
+                            'assets/images/home2/h3.png',
+                            'Black Heels',
+                            '₹1,006',
+                            '₹503',
+                            '50%',
+                            'Myntra.com',
+                            dh,
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: dh * 0.0366),
                     ],
                   ),
-                  SizedBox(height: 8),
-
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text.rich(
-                      TextSpan(
-                        text:
-                            'Based on what complements your closet and you ❤️',
-                        style: GoogleFonts.libreFranklin(
-                          color: Color(0xFF6D717F),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Recommendation Cards
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.60,
-                    children: [
-                      _buildProductCard(
-                        'assets/images/home2/h6.png',
-                        'Blue Kurta',
-                        '₹1,299',
-                        '₹363',
-                        '72%',
-                        'Amazon.in',
-                        dh,
-                      ),
-                      _buildProductCard(
-                        'assets/images/home2/h3.png',
-                        'Black Heels',
-                        '₹1,006',
-                        '₹503',
-                        '50%',
-                        'Myntra.com',
-                        dh,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: dh * 0.0366),
-                ],
+                ),
+              ),
+            ],
+          ),
+          if (!_isLoggedIn)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(
+                child: GlobalDialogBox(
+                  title: "Please Sign Up to Continue",
+                  description: "kqsxk sxkjbas kjhsaxjk",
+                  buttonNeed: true,
+                  buttonText: "Click to Scan and Sign Up",
+                  onTap: () {
+                    context.goNamed('scan&discover');
+                  },
+                ),
               ),
             ),
-          ),
+          // Interaction blocker when not logged in
+          // if (!_isLoggedIn)
+          //   Positioned.fill(
+          //     child: AbsorbPointer(
+          //       absorbing: true,
+          //       child: Container(color: Colors.transparent),
+          //     ),
+          //   ),
         ],
       ),
     );
@@ -482,7 +594,30 @@ class _MywardrobePageState extends State<MywardrobePage> {
                   text: "Upload to create",
                   onPressed: () {
                     Navigator.of(context).pop();
-                    context.goNamed('uploadOutfit');
+                    final extraData = <String, dynamic>{};
+                    if (widget.occasion != null && widget.occasion!.isNotEmpty)
+                      extraData["occasion"] = widget.occasion;
+                    if (widget.description != null &&
+                        widget.description!.isNotEmpty)
+                      extraData["description"] = widget.description;
+                    if (widget.eventId != null && widget.eventId!.isNotEmpty)
+                      extraData["eventId"] = widget.eventId;
+                    if (widget.loaction != null && widget.loaction!.isNotEmpty)
+                      extraData["location"] = widget.loaction;
+                    if (extraData.isNotEmpty) {
+                      extraData["isDialogBoxOpen"] =
+                          true; // add this only if other data exists
+                    }
+                    context.goNamed(
+                      'uploadOutfit',
+                      extra: extraData.isNotEmpty ? extraData : null,
+                    );
+                    // Log all incoming widget data
+                    Developer.log("isDialogBoxOpen: ${widget.isDialogBoxOpen}");
+                    Developer.log("occasion: ${widget.occasion}");
+                    Developer.log("description: ${widget.description}");
+                    Developer.log("eventId: ${widget.eventId}");
+                    Developer.log("location: ${widget.loaction}");
                   },
                   rightIcon: true,
                 ),
@@ -579,13 +714,36 @@ class _MywardrobePageState extends State<MywardrobePage> {
                 ),
                 const SizedBox(height: 16),
                 GlobalPinkButton(
-                  text: "Let’s style Babe",
+                  text: "Let’s style, Babe",
                   onPressed: () {
                     Navigator.of(context).pop();
+                    final extraData = <String, dynamic>{};
+
+                    if (widget.occasion != null && widget.occasion!.isNotEmpty)
+                      extraData["occasion"] = widget.occasion;
+                    if (widget.description != null &&
+                        widget.description!.isNotEmpty)
+                      extraData["description"] = widget.description;
+                    if (widget.eventId != null && widget.eventId!.isNotEmpty)
+                      extraData["eventId"] = widget.eventId;
+                    if (widget.loaction != null && widget.loaction!.isNotEmpty)
+                      extraData["location"] = widget.loaction;
+
+                    if (extraData.isNotEmpty) {
+                      extraData["isDialogBoxOpen"] =
+                          true; // add this only if other data exists
+                    }
                     context.goNamed(
                       'createOutfit',
                       queryParameters: {"occasion": _occasionController.text},
+                      extra: extraData.isNotEmpty ? extraData : null,
                     );
+                    // Log all incoming widget data
+                    Developer.log("isDialogBoxOpen: ${widget.isDialogBoxOpen}");
+                    Developer.log("occasion: ${widget.occasion}");
+                    Developer.log("description: ${widget.description}");
+                    Developer.log("eventId: ${widget.eventId}");
+                    Developer.log("location: ${widget.loaction}");
                   },
                   rightIcon: true,
                 ),

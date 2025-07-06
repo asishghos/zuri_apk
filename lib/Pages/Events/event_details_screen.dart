@@ -3,9 +3,11 @@
 import 'dart:developer' as Developer;
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Pages/Events/add_or_edit_event_overlay.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/services/Class/event_model.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:testing2/services/DataSource/event_api_service.dart';
@@ -31,13 +33,55 @@ class EventDetailsPage extends StatefulWidget {
 
 class _EventDetailsPageState extends State<EventDetailsPage> {
   late EventResponse eventDataResult;
+  bool isLoading = false;
+
+  // Future<void> _refreshEventData() async {
+  //   setState(() {
+  //     isLoading = true;
+  //     eventDataResult = widget.eventData; // Or updated data passed in callback
+  //   });
+
+  //   await Future.delayed(
+  //     Duration(milliseconds: 300),
+  //   ); // Just to simulate delay (optional)
+
+  //   setState(() {
+  //     isLoading = false;
+  //   });
+
+  //   widget.onEventUpdated?.call();
+  // }
 
   Future<void> _refreshEventData() async {
     setState(() {
-      // For now, just trigger a rebuild. Replace this with actual refresh logic.
-      eventDataResult = widget.eventData;
+      isLoading = true;
     });
-    // Optionally, call widget.onEventUpdated?.call();
+
+    try {
+      // if you have an API to fetch the updated event
+      final updatedEvent;
+      if (widget.eventData.event.isMultiDay) {
+        updatedEvent = await EventApiService.getSingleDayEventDetails(
+          eventId: widget.eventData.event.id,
+        );
+      } else {
+        updatedEvent = await EventApiService.getSingleEventDetails(
+          eventId: widget.eventData.event.id,
+          dayEventId:
+              widget.eventData.event.daySpecificData[widget.index ?? 0].id,
+        );
+      }
+      setState(() {
+        eventDataResult = updatedEvent;
+      });
+    } catch (e) {
+      Developer.log('❌ Error refreshing event: $e');
+      showErrorSnackBar(context, 'Failed to refresh event');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
     widget.onEventUpdated?.call();
   }
 
@@ -72,118 +116,124 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.95,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Drag handle
-          Container(
-            margin: EdgeInsets.only(top: 8),
-            width: 40,
-            height: 4,
+    return isLoading
+        ? LoadingPage()
+        : Container(
+            height: MediaQuery.of(context).size.height * 0.95,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
             ),
-          ),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'View Details',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF394050),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    padding: EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Color(0xFF141B34), width: 1.5),
-                    ),
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedCancel01,
-                      size: 16,
-                      color: Color(0xFF141B34),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Add this horizontal line
-          Container(
-            height: 1.5,
-            margin: EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(color: Color(0xFF9EA2AE)),
-          ),
-
-          // Content
-          Expanded(
             child: Column(
               children: [
-                // Scrollable content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.only(
-                      bottom: 16,
-                      left: 16,
-                      right: 16,
-                      top: 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Event Header
-                        _buildEventHeader(),
-
-                        SizedBox(height: 24),
-
-                        // Description Section
-                        _buildDescriptionSection(),
-
-                        SizedBox(height: 24),
-
-                        _buildStyledLookSection(),
-
-                        SizedBox(height: 24),
-                      ],
-                    ),
+                // Drag handle
+                Container(
+                  margin: EdgeInsets.only(top: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
 
-                // Action Button (Fixed at bottom)
+                // Header
                 Padding(
-                  padding: EdgeInsets.only(
-                    bottom: 16,
-                    left: 16,
-                    right: 16,
-                    top: 16,
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'View Details',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF394050),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Color(0xFF141B34),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: HugeIcon(
+                            icon: HugeIcons.strokeRoundedCancel01,
+                            size: 16,
+                            color: Color(0xFF141B34),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: _buildActionButton(),
+                ),
+
+                // Add this horizontal line
+                Container(
+                  height: 1.5,
+                  margin: EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(color: Color(0xFF9EA2AE)),
+                ),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    children: [
+                      // Scrollable content
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.only(
+                            bottom: 16,
+                            left: 16,
+                            right: 16,
+                            top: 16,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Event Header
+                              _buildEventHeader(),
+
+                              SizedBox(height: 24),
+
+                              // Description Section
+                              _buildDescriptionSection(),
+
+                              SizedBox(height: 24),
+
+                              _buildStyledLookSection(),
+
+                              SizedBox(height: 24),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Action Button (Fixed at bottom)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: 16,
+                          left: 16,
+                          right: 16,
+                          top: 16,
+                        ),
+                        child: _buildActionButton(),
+                      ),
+                      SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
+          );
   }
 
   Widget _buildEventHeader() {
@@ -270,7 +320,6 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                   } else {
                     await deleteEntireEvent(eventDataResult.event.id);
                   }
-
                   widget.onEventDeleted?.call();
                   showSuccessSnackBar(context, "Event deleted successfully");
                 },
@@ -371,7 +420,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
           isEditMode: true,
           eventData: eventDataResult,
           onEventUpdated: () {
-            // Only keep one callback - this is called when update is successful
+            _refreshEventData();
             Developer.log("Event updated successfully");
           },
           onEventUpdatedCallBack: (updatedEventData) {
@@ -380,7 +429,6 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             });
             _refreshEventData();
           },
-          // Remove onSave callback to avoid conflicts
         ),
       ),
     ).then((result) {
@@ -549,7 +597,9 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         // Styled look image container
         Container(
           width: double.infinity,
-          height: 250, // Fixed height for the styled look
+          height:
+              MediaQuery.of(context).size.height *
+              0.4, // Fixed height for the styled look
           decoration: BoxDecoration(
             color: Colors.grey[100],
             borderRadius: BorderRadius.circular(16),
@@ -557,7 +607,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             image: styledImage != null
                 ? DecorationImage(
                     image: NetworkImage(styledImage),
-                    fit: BoxFit.cover,
+                    fit: BoxFit.fill,
                   )
                 : null,
           ),
@@ -593,7 +643,30 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          print('Turn My Closet into a Look tapped');
+          context.goNamed(
+            "myWardrobe",
+            extra: {
+              "isDialogBoxOpen": true,
+              "occasion": eventDataResult.event.occasion,
+              "description": (eventDataResult.event.isMultiDay)
+                  ? eventDataResult
+                        .event
+                        .daySpecificData[widget.index ?? 0]
+                        .description
+                  : eventDataResult.event.singleDayDetails?.description,
+
+              "eventId": (eventDataResult.event.isMultiDay)
+                  ? eventDataResult.event.daySpecificData[widget.index ?? 0].id
+                  : eventDataResult.event.id,
+              "location": (eventDataResult.event.isMultiDay)
+                  ? eventDataResult
+                        .event
+                        .daySpecificData[widget.index ?? 0]
+                        .location
+                  : eventDataResult.event.singleDayDetails?.location,
+            },
+          );
+          // print('Turn My Closet into a Look tapped');
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFFE25C7E),

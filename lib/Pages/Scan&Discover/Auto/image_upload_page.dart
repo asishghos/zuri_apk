@@ -531,6 +531,7 @@ class _AutoImageUploadPageState extends State<AutoImageUploadPage> {
             barrierDismissible: false, // Prevents closing on tap outside
             builder: (BuildContext context) {
               return GlobalDialogBox(
+                needCancleButton: true,
                 buttonNeed: true,
                 title: "Uh Oh!",
                 description:

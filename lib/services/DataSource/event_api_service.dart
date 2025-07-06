@@ -13,8 +13,12 @@ class EventApiService {
       final url = Uri.parse(ApiRoutes.addEvent);
       final body = json.encode(eventRequest.toJson());
 
-      Developer.log('Request URL: $url');
-      Developer.log('Request Body: $body');
+      // Developer.log('Request URL: $url');
+      // Developer.log('Request Body: $body');
+      Developer.log("Event request created: ${eventRequest.toString()}");
+      Developer.log(
+        "Request Body (JSON): ${jsonEncode(eventRequest.toJson())}",
+      );
 
       final response = await http.post(
         url,
@@ -22,7 +26,7 @@ class EventApiService {
         body: body,
       );
 
-      Developer.log('Response Status: ${response.statusCode}');
+      // Developer.log('Response Status: ${response.statusCode}');
       Developer.log('Response Body: ${response.body}');
 
       if (response.statusCode == 201) {
@@ -234,5 +238,38 @@ class EventApiService {
       daySpecificData: daySpecificData,
       timezone: timezone,
     );
+  }
+
+  static Future<EventResponse?> addStyledImageToEvent({
+    required String eventId,
+    required List<String> styledImageUrls,
+  }) async {
+    try {
+      final uri = Uri.parse("${ApiRoutes.styleToEvent}/$eventId");
+
+      final body = {"styledImageUrls": styledImageUrls};
+
+      final response = await http.post(
+        uri,
+        headers: await AuthApiService.getHeaders(includeAuth: true)
+          ..addAll({'Content-Type': 'application/json'}),
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        Developer.log("✅ Styled image(s) added to event successfully");
+        Developer.log(response.body);
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        return EventResponse.fromJson(responseData);
+      } else {
+        Developer.log(
+          "❌ Failed to add styled image(s): ${response.statusCode} ${response.body}",
+        );
+        return null;
+      }
+    } catch (e) {
+      Developer.log("❌ Exception in addStyledImageToEvent: $e");
+      return null;
+    }
   }
 }

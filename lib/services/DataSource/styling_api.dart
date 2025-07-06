@@ -10,20 +10,31 @@ import 'package:testing2/services/DataSource/auth_api.dart';
 import 'package:testing2/services/api_routes.dart';
 
 class GenerateLookService {
-  static Future<GeneratedOccasionResponse?> generateLookForOccasion(
-    String occasion,
-  ) async {
+  static Future<OutfitAnalysisResponse?> generateLookForOccasion({
+    required String occasion,
+    String? description,
+  }) async {
     try {
-      final uri = Uri.parse('${ApiRoutes.getStyledOutfits}?occasion=$occasion');
+      final uri = Uri.parse(
+        ApiRoutes.getStyledOutfits,
+      ); // Remove query param from URL
+
       final response = await http.post(
         uri,
-        headers: await AuthApiService.getHeaders(includeAuth: true),
+        headers: await AuthApiService.getHeaders(includeAuth: true)
+          ..addAll({'Content-Type': 'application/json'}),
+        body: json.encode({
+          'occasion': occasion,
+          'description':
+              description ?? "No specific description", // Send dummy if null
+        }),
       );
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
+        Developer.log(jsonData.toString());
         Developer.log("✅ Image generate successfully");
-        return GeneratedOccasionResponse.fromJson(jsonData);
+        return OutfitAnalysisResponse.fromJson(jsonData);
       } else {
         debugPrint("❌ Error: ${response.statusCode} ${response.body}");
         return null;
@@ -34,7 +45,7 @@ class GenerateLookService {
     }
   }
 
-  static Future<StyledOutfitResponse?> getStyleRecommender({
+  static Future<OutfitAnalysisResponse?> getStyleRecommender({
     required List<File> images,
     required String occasion,
     String? description,
@@ -75,7 +86,7 @@ class GenerateLookService {
         final decoded = jsonDecode(response.body);
         Developer.log("✅ Image generate successfully");
         print(response.body.trim());
-        return StyledOutfitResponse.fromJson(decoded);
+        return OutfitAnalysisResponse.fromJson(decoded);
       } else {
         Developer.log("❌ Error: ${response.statusCode} ${response.body}");
         return null;

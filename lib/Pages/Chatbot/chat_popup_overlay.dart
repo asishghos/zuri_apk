@@ -12,6 +12,7 @@ import 'package:flutter_markdown/flutter_markdown.dart'; // Added for Markdown r
 import 'package:permission_handler/permission_handler.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
+import 'package:testing2/services/DataSource/uploaded_look_api.dart';
 
 // OpenAI Service Class with Login Check
 class OpenAIService {
@@ -52,6 +53,22 @@ Always end with specific follow-ups:
 - "Want to explore more [topic] looks?"
 - "Should we dive into color coordination?"
 - "Ready to restyle your existing pieces?"
+
+// Add this to the END of both prompts (replace any existing response format instructions):
+
+## RESPONSE FORMAT - CRITICAL
+You MUST respond with ONLY valid JSON in this exact format. Do not include any text before or after the JSON:
+
+{
+  "originalResponse": "your complete fashion advice response here",
+  "keyWords": ["item1", "item2", "item3", "item4"]
+}
+
+IMPORTANT: 
+- Return ONLY the JSON object, no additional text
+- Do not wrap in markdown code blocks
+- Do not repeat the response twice
+- keyWords should be 3-4 clothing items from your advice. This should not empty.
 
 ## BOUNDARIES
 - **On-topic**: Fashion, styling, wardrobe, beauty (fashion-related)
@@ -98,6 +115,22 @@ Body-positive philosophy: **flatter, never change**
 - Budget-friendly mix-and-match solutions
 - Occasion-appropriate styling
 
+// Add this to the END of both prompts (replace any existing response format instructions):
+
+## RESPONSE FORMAT - CRITICAL
+You MUST respond with ONLY valid JSON in this exact format. Do not include any text before or after the JSON:
+
+{
+  "originalResponse": "your complete fashion advice response here",
+  "keyWords": ["item1", "item2", "item3", "item4"]
+}
+
+IMPORTANT: 
+- Return ONLY the JSON object, no additional text
+- Do not wrap in markdown code blocks
+- Do not repeat the response twice
+- keyWords should be 3-4 clothing items from your advice. This should not empty.
+
 ## BOUNDARIES
 - **On-topic**: Fashion, styling, wardrobe, beauty (fashion-related)
 - **Off-topic**: "Style questions only, darling! For everything else, try your group chat 💕"
@@ -128,7 +161,7 @@ Replace all engagement follow-ups with this login CTA when user is not logged in
     return base64Encode(imageBytes);
   }
 
-  static Future<String> sendMessage(
+  static Future<Map<String, dynamic>> sendMessage(
     List<Map<String, String>> messages, {
     String? customSystemPrompt,
   }) async {
@@ -169,20 +202,37 @@ Replace all engagement follow-ups with this login CTA when user is not logged in
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'];
+        String aiResponse = data['choices'][0]['message']['content'];
+
+        // Try to parse as JSON first
+        try {
+          final jsonResponse = jsonDecode(aiResponse);
+          return jsonResponse; // Return the full JSON object
+        } catch (e) {
+          // If not JSON, wrap in expected format
+          return {'originalResponse': aiResponse, 'keyWords': []};
+        }
       } else {
         Developer.log(
           'OpenAI API Error: ${response.statusCode} - ${response.body}',
         );
-        return "Sorry for the slip-up! Let's hit refresh and talk fashion!";
+        return {
+          'originalResponse':
+              "Sorry for the slip-up! Let's hit refresh and talk fashion!",
+          'keyWords': [],
+        };
       }
     } catch (e) {
       Developer.log('OpenAI Service Error: $e');
-      return "Sorry for the slip-up! Let's hit refresh and talk fashion!";
+      return {
+        'originalResponse':
+            "Sorry for the slip-up! Let's hit refresh and talk fashion!",
+        'keyWords': [],
+      };
     }
   }
 
-  static Future<String> sendMessageWithImage(
+  static Future<Map<String, dynamic>> sendMessageWithImage(
     List<Map<String, dynamic>> messages, {
     String? customSystemPrompt,
   }) async {
@@ -214,16 +264,33 @@ Replace all engagement follow-ups with this login CTA when user is not logged in
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'];
+        String aiResponse = data['choices'][0]['message']['content'];
+
+        // Try to parse as JSON first
+        try {
+          final jsonResponse = jsonDecode(aiResponse);
+          return jsonResponse; // Return the full JSON object
+        } catch (e) {
+          // If not JSON, wrap in expected format
+          return {'originalResponse': aiResponse, 'keyWords': []};
+        }
       } else {
         Developer.log(
           'OpenAI API Error: ${response.statusCode} - ${response.body}',
         );
-        return "Sorry for the slip-up! Let's hit refresh and talk fashion!";
+        return {
+          'originalResponse':
+              "Sorry for the slip-up! Let's hit refresh and talk fashion!",
+          'keyWords': [],
+        };
       }
     } catch (e) {
       Developer.log('OpenAI Service Error: $e');
-      return "Sorry for the slip-up! Let's hit refresh and talk fashion!";
+      return {
+        'originalResponse':
+            "Sorry for the slip-up! Let's hit refresh and talk fashion!",
+        'keyWords': [],
+      };
     }
   }
 }
@@ -530,20 +597,34 @@ class _ChatPopupOverlayState extends State<ChatPopupOverlay>
 
     try {
       final response = await OpenAIService.sendMessage(_conversationHistory);
-
+      Developer.log(response.toString());
       if (mounted) {
         setState(() {
           _isTyping = false;
+          String displayText = response is Map
+              ? response['originalResponse'] ?? response.toString()
+              : response.toString();
           _messages.add(
             ChatMessage(
-              text: response,
+              text: displayText,
               isUser: false,
               timestamp: DateTime.now(),
             ),
           );
         });
+        // Send keywords to dummy API if available
+        if (response is Map && response['keyWords'] != null) {
+          _sendKeywordsToAPI(List<String>.from(response['keyWords']));
+        }
 
-        _conversationHistory.add({'role': 'assistant', 'content': response});
+        // Add original response to conversation history
+        String conversationText = response is Map
+            ? response['originalResponse'] ?? response.toString()
+            : response.toString();
+        _conversationHistory.add({
+          'role': 'assistant',
+          'content': conversationText,
+        });
         _scrollToBottom();
       }
     } catch (e) {
@@ -561,6 +642,22 @@ class _ChatPopupOverlayState extends State<ChatPopupOverlay>
         });
         _scrollToBottom();
       }
+    }
+  }
+
+  void _sendKeywordsToAPI(List<String> keywords) async {
+    try {
+      // Your dummy API call here
+      Developer.log('Sending keywords to API: $keywords');
+
+      // Example API call:
+      // final response = await http.post(
+      //   Uri.parse('your-api-endpoint'),
+      //   headers: {'Content-Type': 'application/json'},
+      //   body: jsonEncode({'keywords': keywords}),
+      // );
+    } catch (e) {
+      print('Error sending keywords to API: $e');
     }
   }
 
@@ -597,18 +694,31 @@ class _ChatPopupOverlayState extends State<ChatPopupOverlay>
       if (mounted) {
         setState(() {
           _isTyping = false;
+          String displayText = response is Map
+              ? response['originalResponse'] ?? response.toString()
+              : response.toString();
           _messages.add(
             ChatMessage(
-              text: response,
+              text: displayText,
               isUser: false,
               timestamp: DateTime.now(),
             ),
           );
         });
 
-        // Add to conversation history as text only
-        _conversationHistory.add({'role': 'user', 'content': message});
-        _conversationHistory.add({'role': 'assistant', 'content': response});
+        // Send keywords to dummy API if available
+        if (response is Map && response['keyWords'] != null) {
+          _sendKeywordsToAPI(List<String>.from(response['keyWords']));
+        }
+
+        // Add original response to conversation history
+        String conversationText = response is Map
+            ? response['originalResponse'] ?? response.toString()
+            : response.toString();
+        _conversationHistory.add({
+          'role': 'assistant',
+          'content': conversationText,
+        });
         _scrollToBottom();
       }
     } catch (e) {
@@ -629,8 +739,12 @@ class _ChatPopupOverlayState extends State<ChatPopupOverlay>
     }
   }
 
-  void _sendImageWithPrompt(String prompt) {
+  // SOLUTION 1: Upload in background (RECOMMENDED)
+  void _sendImageWithPrompt(String prompt) async {
     if (_uploadedImage == null) return;
+
+    // Store reference before clearing
+    final imageToUpload = _uploadedImage!;
 
     // Add user message with image
     setState(() {
@@ -646,7 +760,12 @@ class _ChatPopupOverlayState extends State<ChatPopupOverlay>
     });
 
     _scrollToBottom();
+
+    // Send to GPT immediately for fast response
     _sendImageToGPT(prompt, _uploadedImage!);
+
+    // Upload in background without waiting
+    _uploadImageInBackground(imageToUpload, prompt);
 
     // Clear the uploaded image after sending
     setState(() {
@@ -655,6 +774,105 @@ class _ChatPopupOverlayState extends State<ChatPopupOverlay>
     });
   }
 
+  // Background upload method
+  void _uploadImageInBackground(File imageFile, String prompt) {
+    // Fire and forget - don't await
+    UploadedLooksService.uploadLook(imageFile: imageFile, userQuery: prompt)
+        .then((_) {
+          Developer.log("Success to upload this picture");
+        })
+        .catchError((e) {
+          Developer.log("Failed to upload this picture: $e");
+        });
+  }
+
+  // // SOLUTION 2: Upload with delay (if you must wait)
+  // void _sendImageWithPromptWithDelay(String prompt) async {
+  //   if (_uploadedImage == null) return;
+  //   // Add user message with image
+  //   setState(() {
+  //     _messages.add(
+  //       ChatMessage(
+  //         text: prompt,
+  //         isUser: true,
+  //         timestamp: DateTime.now(),
+  //         image: _uploadedImage,
+  //       ),
+  //     );
+  //     _isTyping = true;
+  //   });
+
+  //   _scrollToBottom();
+
+  //   // Send to GPT first
+  //   _sendImageToGPT(prompt, _uploadedImage!);
+
+  //   // Wait a bit then upload
+  //   Future.delayed(Duration(milliseconds: 500), () async {
+  //     try {
+  //       await UploadedLooksService.uploadLook(
+  //         imageFile: _uploadedImage!,
+  //         userQuery: prompt,
+  //       );
+  //       Developer.log("Success to upload this picture");
+  //     } catch (e) {
+  //       Developer.log("Failed to upload this picture: $e");
+  //     }
+  //   });
+
+  //   // Clear the uploaded image after sending
+  //   setState(() {
+  //     _uploadedImage = null;
+  //     _selectedPromptIndex = null;
+  //   });
+  // }
+
+  // // SOLUTION 3: Parallel execution with timeout
+  // void _sendImageWithPromptParallel(String prompt) async {
+  //   if (_uploadedImage == null) return;
+
+  //   // Store reference before clearing
+  //   final imageToUpload = _uploadedImage!;
+
+  //   // Add user message with image
+  //   setState(() {
+  //     _messages.add(
+  //       ChatMessage(
+  //         text: prompt,
+  //         isUser: true,
+  //         timestamp: DateTime.now(),
+  //         image: _uploadedImage,
+  //       ),
+  //     );
+  //     _isTyping = true;
+  //   });
+
+  //   _scrollToBottom();
+
+  //   // Run both operations in parallel
+  //   await Future.wait([
+  //     // GPT response (priority)
+  //     Future(() => _sendImageToGPT(prompt, imageToUpload)),
+  //     // Upload with timeout (non-blocking)
+  //     Future(() async {
+  //       try {
+  //         await UploadedLooksService.uploadLook(
+  //           imageFile: imageToUpload,
+  //           userQuery: prompt,
+  //         ).timeout(Duration(seconds: 10));
+  //         Developer.log("Success to upload this picture");
+  //       } catch (e) {
+  //         Developer.log("Failed to upload this picture: $e");
+  //       }
+  //     }),
+  //   ]);
+
+  //   // Clear the uploaded image after sending
+  //   setState(() {
+  //     _uploadedImage = null;
+  //     _selectedPromptIndex = null;
+  //   });
+  // }
   @override
   void dispose() {
     _textController.dispose();
@@ -917,6 +1135,12 @@ class _ChatPopupOverlayState extends State<ChatPopupOverlay>
                         setState(() {
                           _selectedPromptIndex = index;
                         });
+                        // Delay to allow UI to update before hiding preview
+                        Future.delayed(Duration(milliseconds: 100), () {
+                          setState(() {
+                            _uploadedImage = null;
+                          });
+                        });
                         _sendImageWithPrompt(_quickPrompts[index]);
                       },
                       child: Container(
@@ -987,7 +1211,7 @@ class _ChatPopupOverlayState extends State<ChatPopupOverlay>
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: _uploadedImage != null
-                          ? 'Describe what you want to know about this image...'
+                          ? 'Ask about this image'
                           : 'Ask Follow up question',
                       hintStyle: GoogleFonts.libreFranklin(
                         fontSize: 16,

@@ -45,7 +45,7 @@ import 'package:testing2/services/DataSource/auth_api.dart';
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: '/home2',
+    initialLocation: '/splash',
     debugLogDiagnostics: true,
     routes: [
       /// Shell with BottomNav
@@ -131,13 +131,29 @@ class AppRouter {
       GoRoute(
         path: '/myWardrobe',
         name: 'myWardrobe',
-        builder: (context, state) => MainShell(
-          child: MywardrobePage(),
-          showBottomNavBar: true,
-          showAppBar: false,
-          showBackButton: false,
-        ),
+        builder: (context, state) {
+          final extraData = state.extra as Map<String, dynamic>?;
+          final isDialogBoxOpen = extraData?['isDialogBoxOpen'] ?? false;
+          final occasion = extraData?['occasion'];
+          final description = extraData?['description'];
+          final eventId = extraData?['eventId'];
+          final loaction = extraData?['location'];
+
+          return MainShell(
+            child: MywardrobePage(
+              isDialogBoxOpen: isDialogBoxOpen,
+              occasion: occasion,
+              description: description,
+              eventId: eventId,
+              loaction: loaction,
+            ),
+            showBottomNavBar: true,
+            showAppBar: false,
+            showBackButton: false,
+          );
+        },
       ),
+
       GoRoute(
         path: '/allItemsWardrobe',
         name: 'allItemsWardrobe',
@@ -694,8 +710,21 @@ class AppRouter {
                 .map((path) => File(path.trim()))
                 .toList();
           }
+
+          final extraData = state.extra as Map<String, dynamic>?;
+          final isDialogBoxOpen = extraData?['isDialogBoxOpen'] ?? false;
+          final description = extraData?['description'];
+          final eventId = extraData?['eventId'];
+          final loaction = extraData?['location'];
           return MainShell(
-            child: CreateOutfitPage(occation: occasion, images: imagesList),
+            child: CreateOutfitPage(
+              occasion: occasion,
+              images: imagesList,
+              description: description,
+              eventId: eventId,
+              isDialogBoxOpen: isDialogBoxOpen,
+              loaction: loaction,
+            ),
             showAppBar: false,
             showBackButton: false,
             showBottomNavBar: false,
@@ -707,8 +736,20 @@ class AppRouter {
         path: '/uploadOutfit',
         name: 'uploadOutfit',
         builder: (context, state) {
+          final extraData = state.extra as Map<String, dynamic>?;
+          final isDialogBoxOpen = extraData?['isDialogBoxOpen'] ?? false;
+          final occasion = extraData?['occasion'];
+          final description = extraData?['description'];
+          final eventId = extraData?['eventId'];
+          final loaction = extraData?['location'];
           return MainShell(
-            child: UploadOutfitPage(),
+            child: UploadOutfitPage(
+              isDialogBoxOpen: isDialogBoxOpen,
+              occasion: occasion,
+              description: description,
+              eventId: eventId,
+              loaction: loaction,
+            ),
             showAppBar: false,
             showBackButton: false,
             showBottomNavBar: false,

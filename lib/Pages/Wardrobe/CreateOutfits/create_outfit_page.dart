@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as Developer;
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:screenshot/screenshot.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,17 +12,31 @@ import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/Pages/Wardrobe/CreateOutfits/bad_item_page.dart';
+import 'package:testing2/services/Class/product_model.dart';
 import 'package:testing2/services/Class/styling_model.dart';
 import 'package:testing2/services/DataSource/digital_wardrobe_api.dart';
+import 'package:testing2/services/DataSource/event_api_service.dart';
+import 'package:testing2/services/DataSource/product_api.dart';
 import 'package:testing2/services/DataSource/saved_fav_api.dart';
 import 'package:testing2/services/DataSource/styling_api.dart';
 
 class CreateOutfitPage extends StatefulWidget {
-  final String? occation;
+  final String? occasion;
   final List<File>? images;
+  final bool? isDialogBoxOpen;
+  final String? description;
+  final String? eventId;
+  final String? loaction;
 
-  CreateOutfitPage({Key? key, required this.occation, this.images})
-    : super(key: key);
+  CreateOutfitPage({
+    Key? key,
+    required this.occasion,
+    this.images,
+    this.isDialogBoxOpen,
+    this.description,
+    this.eventId,
+    this.loaction,
+  }) : super(key: key);
   @override
   State<CreateOutfitPage> createState() => _CreateOutfitPageState();
 }
@@ -31,95 +44,14 @@ class CreateOutfitPage extends StatefulWidget {
 class _CreateOutfitPageState extends State<CreateOutfitPage> {
   PageController _pageController = PageController();
   int _currentIndex = 0;
-  GeneratedOccasionResponse? _generatedResponse;
-  StyledOutfitResponse? _recommendationResponse;
+  OutfitAnalysisResponse? _generatedResponse;
+  OutfitAnalysisResponse? _recommendationResponse;
   bool _isLoading = false;
   String? _errorMessage;
   bool _showBadItemsPopup = false;
+  bool _isProductLoading = false;
   // Create different products for variety
-  List<Map<String, String>> products = [
-    {
-      'image': 'assets/images/home2/h6.png',
-      'title': 'Blue Kurta',
-      'original': '₹1,299',
-      'discounted': '₹363',
-      'discount': '72%',
-      'store': 'Amazon.in',
-    },
-    {
-      'image': 'assets/images/home2/h6.png',
-      'title': 'Blue Kurta',
-      'original': '₹1,299',
-      'discounted': '₹363',
-      'discount': '72%',
-      'store': 'Amazon.in',
-    },
-    {
-      'image': 'assets/images/home2/h6.png',
-      'title': 'Blue Kurta',
-      'original': '₹1,299',
-      'discounted': '₹363',
-      'discount': '72%',
-      'store': 'Amazon.in',
-    },
-    {
-      'image': 'assets/images/home2/h6.png',
-      'title': 'Blue Kurta',
-      'original': '₹1,299',
-      'discounted': '₹363',
-      'discount': '72%',
-      'store': 'Amazon.in',
-    },
-    {
-      'image': 'assets/images/home2/h6.png',
-      'title': 'Blue Kurta',
-      'original': '₹1,299',
-      'discounted': '₹363',
-      'discount': '72%',
-      'store': 'Amazon.in',
-    },
-
-    {
-      'image': 'assets/images/home2/h3.png',
-      'title': 'Black Heels',
-      'original': '₹1,006',
-      'discounted': '₹503',
-      'discount': '50%',
-      'store': 'Myntra.com',
-    },
-    {
-      'image': 'assets/images/home2/h1.png',
-      'title': 'White Dress',
-      'original': '₹2,499',
-      'discounted': '₹1,249',
-      'discount': '50%',
-      'store': 'Flipkart',
-    },
-    {
-      'image': 'assets/images/home2/h2.png',
-      'title': 'Denim Jacket',
-      'original': '₹1,899',
-      'discounted': '₹949',
-      'discount': '50%',
-      'store': 'Amazon.in',
-    },
-    {
-      'image': 'assets/images/home2/h4.png',
-      'title': 'Red Handbag',
-      'original': '₹899',
-      'discounted': '₹449',
-      'discount': '50%',
-      'store': 'Myntra.com',
-    },
-    {
-      'image': 'assets/images/home2/h5.png',
-      'title': 'Silver Necklace',
-      'original': '₹1,599',
-      'discounted': '₹799',
-      'discount': '50%',
-      'store': 'Flipkart',
-    },
-  ];
+  List<ProductItem> _products = [];
 
   @override
   void initState() {
@@ -127,7 +59,14 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     if (widget.images != null) {
       _uploadImages(selectedImages: widget.images!);
     }
+    Developer.log("description" + widget.description.toString());
     _initializeData();
+    // Log all incoming widget data
+    Developer.log("isDialogBoxOpen: ${widget.isDialogBoxOpen}");
+    Developer.log("occasion: ${widget.occasion}");
+    Developer.log("description: ${widget.description}");
+    Developer.log("eventId: ${widget.eventId}");
+    Developer.log("location: ${widget.loaction}");
   }
 
   void _uploadImages({required List<File> selectedImages}) async {
@@ -150,11 +89,70 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     }
   }
 
-  void _initializeData() {
+  void _initializeData() async {
     if (widget.images == null || widget.images!.isEmpty) {
-      _generateLook(widget.occation ?? "Casual");
+      await _generateLook(
+        widget.occasion ?? "Casual",
+        widget.description ?? " ",
+      );
     } else {
-      _fetchStyleRecommender("Casual", widget.images!);
+      await _fetchStyleRecommender(
+        widget.occasion ?? "Casual",
+        widget.description ?? " ",
+        widget.images!,
+      );
+    }
+    // Remove this line: _fetchProductsWithKeywords();
+  }
+
+  void _fetchProductsWithKeywords() async {
+    List<String> keywords = [];
+
+    // Get keywords from the response
+    if (_generatedResponse != null) {
+      keywords = _generatedResponse!.imageAnalysis.goodImagesKeywords;
+      Developer.log("Keywords from generated response: $keywords");
+    } else if (_recommendationResponse != null) {
+      keywords = _recommendationResponse!.imageAnalysis.goodImagesKeywords;
+      Developer.log("Keywords from recommendation response: $keywords");
+    }
+
+    // Only fetch products if we have keywords
+    if (keywords.isNotEmpty) {
+      Developer.log("Fetching products with keywords: $keywords");
+      await _fetchProduct(keywords);
+    } else {
+      Developer.log(
+        "No keywords available - _generatedResponse: ${_generatedResponse != null}, _recommendationResponse: ${_recommendationResponse != null}",
+      );
+    }
+  }
+
+  Future<void> _fetchProduct(List<String> keywords) async {
+    setState(() {
+      _isProductLoading = true;
+    });
+
+    try {
+      final response = await ProductApiServices.fetchProducts(keywords);
+
+      // Print each item nicely
+      for (var item in response) {
+        Developer.log(jsonEncode(item)); // prints whole product map
+      }
+
+      // Or just print the full list:
+      Developer.log("Product Results: ${jsonEncode(response)}");
+
+      setState(() {
+        _products = response; // Store the products
+        _isProductLoading = false;
+      });
+    } catch (e) {
+      Developer.log("Product fetch error: $e");
+      setState(() {
+        _isProductLoading = false;
+      });
     }
   }
 
@@ -164,7 +162,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     super.dispose();
   }
 
-  Future<void> _generateLook(String occasion) async {
+  Future<void> _generateLook(String occasion, String description) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -172,23 +170,18 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
     try {
       final response = await GenerateLookService.generateLookForOccasion(
-        occasion,
+        occasion: occasion,
+        description: description,
       );
       // Developer.log(response.toString());
 
       if (response != null && response.results.isNotEmpty) {
-        Developer.log(
-          "🎉 Occasion: ${response.occasion}, Images: ${response.message}",
-        );
-        for (var look in response.results) {
-          Developer.log(
-            "➡️ ${look?.type} look${look?.lookNumber != null ? ' #${look?.lookNumber}' : ''}",
-          );
-        }
+        Developer.log("🎉 Occasion: ${widget.occasion}");
         setState(() {
           _generatedResponse = response;
           _isLoading = false;
         });
+        _fetchProductsWithKeywords();
       } else {
         Developer.log("❌ Failed to generate looks - Empty response");
         setState(() {
@@ -235,14 +228,14 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
   Future<void> _addToSavedFavourites(int index) async {
     try {
-      String imageData = _getImageData(index);
+      String imageUrl = _getImageUrl(index);
       String description = _getDescription(index);
       String tag = _getSourceText();
 
       final result = await SavedFavouritesService.addToSavedFavourites(
-        imageB64: imageData,
+        imageUrl: imageUrl,
         tag: tag,
-        occasion: widget.occation ?? "Casual",
+        occasion: widget.occasion ?? "Casual",
         description: description,
       );
 
@@ -282,6 +275,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
   Future<void> _fetchStyleRecommender(
     String occasion,
+    String description,
     List<File> images,
   ) async {
     setState(() {
@@ -293,26 +287,31 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
       final response = await GenerateLookService.getStyleRecommender(
         images: images,
         occasion: occasion,
-        description: "",
+        description: description,
       );
 
-      if (response!.results.isNotEmpty || response.badItemReasons.isNotEmpty) {
+      if (response!.results.isNotEmpty) {
         // Developer.log(response.toString());
         Developer.log(
-          "🎉 Occasion: ${response.occasion}, Recommendations: ${response.recommendations}",
+          "🎉 Occasion: ${widget.occasion}, Recommendations: ${response}",
         );
         setState(() {
           _recommendationResponse = response;
           _isLoading = false;
           // Show popup if there are bad items
-          // _showBadItemsPopup = response.badItemReasons.isNotEmpty;
+          _showBadItemsPopup =
+              response.imageAnalysis.badImageWithDescription.isNotEmpty;
         });
-        if (response.badItemReasons.isNotEmpty) {
+
+        _fetchProductsWithKeywords();
+
+        if (response.imageAnalysis.badImageWithDescription.isNotEmpty) {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  BadItemsPage(badItems: response.badItemReasons),
+              builder: (context) => BadItemsPage(
+                badItems: response.imageAnalysis.badImageWithDescription,
+              ),
             ),
           );
         }
@@ -332,6 +331,22 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     }
   }
 
+  List<String> _styledImageUrls = [];
+  Future<void> _lockingForEvent(
+    String eventId,
+    List<String> styledImageUrls,
+  ) async {
+    final response = await EventApiService.addStyledImageToEvent(
+      eventId: eventId,
+      styledImageUrls: styledImageUrls,
+    );
+    if (response != null) {
+      showSuccessSnackBar(context, "Images add successfully in event.");
+    } else {
+      showErrorSnackBar(context, "Failed to add images in event.");
+    }
+  }
+
   bool get _hasData {
     return (_generatedResponse != null &&
             _generatedResponse!.results.isNotEmpty) ||
@@ -344,19 +359,13 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     if (_generatedResponse != null) {
       return _generatedResponse!.results
           .where(
-            (item) =>
-                item?.image != null &&
-                (item?.image ?? '').isNotEmpty &&
-                item?.image != 'null',
+            (item) => (item.imageUrl).isNotEmpty && item.imageUrl != 'null',
           )
           .length;
     } else if (_recommendationResponse != null) {
       return _recommendationResponse!.results
           .where(
-            (item) =>
-                item?.imageB64 != null &&
-                (item?.imageB64 ?? '').isNotEmpty &&
-                item?.imageB64 != 'null',
+            (item) => (item.imageUrl).isNotEmpty && item.imageUrl != 'null',
           )
           .length;
     }
@@ -368,35 +377,24 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     if (_generatedResponse != null) {
       return _generatedResponse!.results
           .where(
-            (item) =>
-                item?.image != null &&
-                (item?.image ?? '').isNotEmpty &&
-                item?.image != 'null',
+            (item) => (item.imageUrl).isNotEmpty && item.imageUrl != 'null',
           )
           .toList();
     } else if (_recommendationResponse != null) {
       return _recommendationResponse!.results
           .where(
-            (item) =>
-                item?.imageB64 != null &&
-                (item?.imageB64 ?? '').isNotEmpty &&
-                item?.imageB64 != 'null',
+            (item) => (item.imageUrl).isNotEmpty && item.imageUrl != 'null',
           )
           .toList();
     }
     return [];
   }
 
-  // Replace the _getImageData method with this:
-  String _getImageData(int index) {
+  String _getImageUrl(int index) {
     List<dynamic> validItems = _validItems;
     if (index < validItems.length) {
       var item = validItems[index];
-      if (_generatedResponse != null) {
-        return item?.image ?? '';
-      } else if (_recommendationResponse != null) {
-        return item?.imageB64 ?? '';
-      }
+      return item?.imageUrl ?? '';
     }
     return '';
   }
@@ -430,14 +428,43 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     List<dynamic> validItems = _validItems;
     if (index < validItems.length) {
       var item = validItems[index];
+      String imageUrl = item?.imageUrl ?? '';
+
+      // Look for description in imageAnalysis.goodImageWithDescription
+      if (_recommendationResponse != null) {
+        for (var goodItem
+            in _recommendationResponse!
+                .imageAnalysis
+                .goodImageWithDescription) {
+          if (goodItem.image == imageUrl) {
+            return goodItem.description;
+          }
+        }
+      }
+
       if (_generatedResponse != null) {
-        return item?.description ?? '';
-      } else if (_recommendationResponse != null) {
-        return item?.description ?? '';
+        for (var goodItem
+            in _generatedResponse!.imageAnalysis.goodImageWithDescription) {
+          if (goodItem.image == imageUrl) {
+            return goodItem.description;
+          }
+        }
       }
     }
     return "This is the space for AI gen image description lorem ipsum lorem ipsum lorem lorem";
   }
+
+  //   String _getItemDescription(int index) {
+  //   List<dynamic> validItems = _validItems;
+  //   if (index < validItems.length) {
+  //     var item = validItems[index];
+  //     if (item is ResultItem) {
+  //       // If you add description field to ResultItem model
+  //       return item.description ?? '';
+  //     }
+  //   }
+  //   return '';
+  // }
 
   ScreenshotController _screenshotController = ScreenshotController();
 
@@ -459,7 +486,9 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
   Widget build(BuildContext context) {
     double dh = MediaQuery.of(context).size.height;
     double dw = MediaQuery.of(context).size.width;
-
+    if (_isLoading) {
+      return LoadingPage();
+    }
     return SafeArea(
       child: Column(
         children: [
@@ -478,6 +507,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                       child: HugeIcon(
                         icon: HugeIcons.strokeRoundedArrowLeft01,
                         color: AppColors.titleTextColor,
+                        size: 24,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -485,17 +515,19 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: "Create ",
+                            text: "Curated  ",
                             style: GoogleFonts.libreFranklin(
                               color: AppColors.titleTextColor,
-                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
                             ),
                           ),
                           TextSpan(
-                            text: "Outfit",
+                            text: "Looks",
                             style: GoogleFonts.libreFranklin(
                               color: AppColors.textPrimary,
-                              fontSize: 16,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -529,9 +561,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
           // Content Section
           Expanded(
-            child: _isLoading
-                ? LoadingPage()
-                : !_hasData
+            child: !_hasData
                 ? _buildErrorState()
                 : SingleChildScrollView(
                     padding: EdgeInsets.all(20),
@@ -541,13 +571,38 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              "Your Curated Look (${_currentIndex + 1}/$_totalItems)",
-                              style: GoogleFonts.libreFranklin(
-                                color: AppColors.titleTextColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            // Column(
+                            //   children: [
+                            //     Text(
+                            //       "Your Curated Looks (${_currentIndex + 1}/$_totalItems)",
+                            //       style: GoogleFonts.libreFranklin(
+                            //         color: AppColors.titleTextColor,
+                            //         fontSize: 16,
+                            //         fontWeight: FontWeight.w600,
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
+                            Row(
+                              children: [
+                                Text(
+                                  "for ",
+                                  style: GoogleFonts.libreFranklin(
+                                    color: AppColors.titleTextColor,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                                Text(
+                                  "${widget.occasion ?? "casual"}  (${_currentIndex + 1}/$_totalItems)",
+                                  style: GoogleFonts.libreFranklin(
+                                    color: AppColors.titleTextColor,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                             Container(
                               padding: EdgeInsets.symmetric(
@@ -586,8 +641,8 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                               },
                               itemCount: _totalItems,
                               itemBuilder: (context, index) {
-                                String imageData = _getImageData(index);
-
+                                String imageData = _getImageUrl(index);
+                                _styledImageUrls.add(imageData);
                                 return Column(
                                   children: [
                                     Expanded(
@@ -598,7 +653,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                             decoration: BoxDecoration(
                                               borderRadius:
                                                   BorderRadius.circular(16),
-                                              color: Colors.grey[200],
+                                              color: Colors.white,
                                             ),
                                             child: ClipRRect(
                                               borderRadius:
@@ -641,8 +696,13 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                                 child:
                                                     (loadingStates[index] ??
                                                         false)
-                                                    ? const CircularProgressIndicator(
+                                                    ? CircularProgressIndicator(
                                                         strokeWidth: 2,
+                                                        color:
+                                                            (savedStates[index] ??
+                                                                false)
+                                                            ? Colors.white
+                                                            : Colors.pink,
                                                       )
                                                     : HugeIcon(
                                                         icon: HugeIcons
@@ -802,32 +862,76 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                               // ),
                               SizedBox(height: 16),
                               // Product Horizontal Scrollable List
-                              Container(
-                                height: 300,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: products
-                                      .length, // Number of product cards
-                                  itemBuilder: (context, index) {
-                                    var product =
-                                        products[index % products.length];
-                                    return Container(
-                                      width: dw * 0.35,
-                                      margin: EdgeInsets.only(right: 16),
-                                      child: _buildProductCard(
-                                        product['image']!,
-                                        product['title']!,
-                                        product['original']!,
-                                        product['discounted']!,
-                                        product['discount']!,
-                                        product['store']!,
-                                        dh,
+                              // Improved version with better handling
+                              _isProductLoading
+                                  ? Container(
+                                      height: 300,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            CircularProgressIndicator(),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              "Finding matching products...",
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    );
-                                  },
-                                ),
-                              ),
-
+                                    )
+                                  : _products.isEmpty
+                                  ? Container(
+                                      height: 300,
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.shopping_bag_outlined,
+                                              size: 48,
+                                              color: Colors.grey[400],
+                                            ),
+                                            SizedBox(height: 16),
+                                            Text(
+                                              "No products found",
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      height: 300,
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: _products.length,
+                                        itemBuilder: (context, index) {
+                                          var product = _products[index];
+                                          return Container(
+                                            width: dw * 0.35,
+                                            margin: EdgeInsets.only(right: 16),
+                                            child: _buildProductCard(
+                                              product.source,
+                                              product.title,
+                                              product.price,
+                                              product.keyword,
+                                              product.rating,
+                                              product.source,
+                                              dh,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
                               SizedBox(height: 24),
 
                               // // Save This Look Button
@@ -841,10 +945,22 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 
                               // Plan in Calendar Button
                               GlobalPinkButton(
-                                text: "Plan in Calender",
-                                onPressed: () {},
-                                leftIcon: true,
-                                leftIconData: HugeIcons.strokeRoundedAdd01,
+                                text: (widget.eventId != null)
+                                    ? "Lock this Look"
+                                    : "Plan in Calender",
+                                onPressed: () async {
+                                  if (widget.eventId == null &&
+                                      widget.eventId!.isEmpty)
+                                    context.goNamed('eventmainscreen');
+                                  else {
+                                    await _lockingForEvent(
+                                      widget.eventId!,
+                                      _styledImageUrls,
+                                    );
+                                  }
+                                },
+                                // leftIcon: true,
+                                // leftIconData: HugeIcons.strokeRoundedAdd01,
                               ),
                               SizedBox(height: 20),
                             ],
@@ -953,12 +1069,12 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
   }
 
   Widget _buildBase64Image(
-    String base64String, {
+    String imageUrl, {
     BoxFit fit = BoxFit.contain,
     double? width,
     double? height,
   }) {
-    if (base64String.isEmpty) {
+    if (imageUrl.isEmpty) {
       return Container(
         width: width,
         height: height,
@@ -978,15 +1094,15 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     }
 
     try {
-      // Remove data:image/jpeg;base64, prefix if present
-      String cleanBase64 = base64String;
-      if (base64String.contains(',')) {
-        cleanBase64 = base64String.split(',')[1];
-      }
+      // // Remove data:image/jpeg;base64, prefix if present
+      // String cleanBase64 = base64String;
+      // if (base64String.contains(',')) {
+      //   cleanBase64 = base64String.split(',')[1];
+      // }
 
-      Uint8List bytes = base64Decode(cleanBase64);
-      return Image.memory(
-        bytes,
+      // Uint8List bytes = base64Decode(cleanBase64);
+      return Image.network(
+        imageUrl,
         fit: fit,
         width: width,
         height: height,
@@ -1051,7 +1167,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                 borderRadius: const BorderRadius.all(Radius.circular(32)),
                 color: const Color(0xFFF5F5F5),
                 image: DecorationImage(
-                  image: AssetImage(imagePath),
+                  image: NetworkImage(imagePath),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -1142,14 +1258,14 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
 }
 
 class SaveButtonWidget extends StatefulWidget {
-  final String? occation;
+  final String? occasion;
   final String? tag;
   final String? description;
   final String? imageBase64;
 
   const SaveButtonWidget({
     super.key,
-    required this.occation,
+    required this.occasion,
     required this.description,
     required this.imageBase64,
     required this.tag,
@@ -1173,7 +1289,7 @@ class _SaveButtonWidgetState extends State<SaveButtonWidget> {
       await _addToSavedFavourites(
         widget.imageBase64!,
         widget.tag ?? "From Zuri",
-        widget.occation ?? "Casual",
+        widget.occasion ?? "Casual",
         widget.description ?? "",
       );
     } else {
@@ -1186,7 +1302,7 @@ class _SaveButtonWidgetState extends State<SaveButtonWidget> {
   }
 
   Future<void> _addToSavedFavourites(
-    String imageB64,
+    String imageUrl,
     String tag,
     String occasion,
     String description,
@@ -1195,7 +1311,7 @@ class _SaveButtonWidgetState extends State<SaveButtonWidget> {
 
     try {
       final result = await SavedFavouritesService.addToSavedFavourites(
-        imageB64: imageB64,
+        imageUrl: imageUrl,
         tag: tag,
         occasion: occasion,
         description: description,

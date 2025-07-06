@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/services/DataSource/auth_api.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -67,7 +68,7 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return _isLoading
-        ? CircularProgressIndicator()
+        ? LoadingPage()
         : Scaffold(
             backgroundColor: Colors.white,
             body: SafeArea(

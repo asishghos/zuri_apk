@@ -83,7 +83,6 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/onboarding/
-    - assets/images/Icon/
     - assets/images/body_shape/
     - assets/images/chatbot/
     - assets/images/Zuri/
@@ -97,6 +96,7 @@ flutter:
     - assets/images/affiliate/
     - assets/images/support/
     - assets/images/styleanalysis/
+    - assets/images/uploadLook/
     - assets/json/
     - .env
 
