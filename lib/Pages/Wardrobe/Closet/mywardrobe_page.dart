@@ -411,9 +411,10 @@ class _MywardrobePageState extends State<MywardrobePage> {
               child: Center(
                 child: GlobalDialogBox(
                   title: "Please Sign Up to Continue",
-                  description: "kqsxk sxkjbas kjhsaxjk",
+                  description:
+                      "Babe, I can’t save your closet—or decode \nyour best colors and fits—unless you sign up. \nLet’s make this official? Pretty please!",
                   buttonNeed: true,
-                  buttonText: "Click to Scan and Sign Up",
+                  buttonText: "OK, make me next-level stylish",
                   onTap: () {
                     context.goNamed('scan&discover');
                   },
