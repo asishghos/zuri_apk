@@ -243,11 +243,22 @@ class EventApiService {
   static Future<EventResponse?> addStyledImageToEvent({
     required String eventId,
     required List<String> styledImageUrls,
+    String? dayEventId, // <-- optional for multi-day
   }) async {
     try {
-      final uri = Uri.parse("${ApiRoutes.styleToEvent}/$eventId");
+      final String baseUrl = ApiRoutes.styleToEvent;
+      final String url = dayEventId != null
+          ? "$baseUrl/$eventId/$dayEventId"
+          : "$baseUrl/$eventId";
 
-      final body = {"styledImageUrls": styledImageUrls};
+      final uri = Uri.parse(url);
+
+      // Send a single string if only 1 image, else send the full list
+      final body = {
+        "styledImageUrls": styledImageUrls.length == 1
+            ? styledImageUrls[0]
+            : styledImageUrls,
+      };
 
       final response = await http.post(
         uri,

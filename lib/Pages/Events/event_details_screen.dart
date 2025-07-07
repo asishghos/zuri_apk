@@ -5,6 +5,7 @@ import 'dart:developer' as Developer;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Pages/Events/add_or_edit_event_overlay.dart';
 import 'package:testing2/Pages/Loading/loading_page.dart';
@@ -33,6 +34,8 @@ class EventDetailsPage extends StatefulWidget {
 
 class _EventDetailsPageState extends State<EventDetailsPage> {
   late EventResponse eventDataResult;
+  PageController _pageController = PageController();
+  int _currentIndex = 0;
   bool isLoading = false;
 
   // Future<void> _refreshEventData() async {
@@ -112,6 +115,12 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   void initState() {
     super.initState();
     eventDataResult = widget.eventData;
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -210,24 +219,62 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                               SizedBox(height: 24),
 
                               _buildStyledLookSection(),
-
-                              SizedBox(height: 24),
                             ],
                           ),
                         ),
                       ),
-
-                      // Action Button (Fixed at bottom)
                       Padding(
-                        padding: EdgeInsets.only(
-                          bottom: 16,
-                          left: 16,
-                          right: 16,
-                          top: 16,
+                        padding: const EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          top: 8,
                         ),
-                        child: _buildActionButton(),
+                        child: GlobalPinkButton(
+                          text: "Turn My Closet into a Look",
+                          onPressed: () {
+                            context.goNamed(
+                              "myWardrobe",
+                              extra: {
+                                "isDialogBoxOpen": true,
+                                "occasion": (eventDataResult.event.isMultiDay)
+                                    ? eventDataResult
+                                          .event
+                                          .daySpecificData[widget.index ?? 0]
+                                          .eventName
+                                    : eventDataResult.event.occasion,
+                                "description":
+                                    (eventDataResult.event.isMultiDay)
+                                    ? eventDataResult
+                                          .event
+                                          .daySpecificData[widget.index ?? 0]
+                                          .description
+                                    : eventDataResult
+                                          .event
+                                          .singleDayDetails
+                                          ?.description,
+
+                                "eventId": eventDataResult.event.id,
+                                "location": (eventDataResult.event.isMultiDay)
+                                    ? eventDataResult
+                                          .event
+                                          .daySpecificData[widget.index ?? 0]
+                                          .location
+                                    : eventDataResult
+                                          .event
+                                          .singleDayDetails
+                                          ?.location,
+                                "dayEventId": (eventDataResult.event.isMultiDay)
+                                    ? eventDataResult
+                                          .event
+                                          .daySpecificData[widget.index ?? 0]
+                                          .id
+                                    : null,
+                              },
+                            );
+                          },
+                        ),
                       ),
-                      SizedBox(height: 24),
+                      SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -576,114 +623,209 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   }
 
   Widget _buildStyledLookSection() {
-    // Fix: Safely handle empty generatedImages
-    final images = eventDataResult.event.generatedImages;
-    final hasImage = images.isNotEmpty && images[0].isNotEmpty;
-    final styledImage = hasImage ? images[0] : null;
+    // Safely extract image list
+    final List<String>? images =
+        eventDataResult.event.generatedImages?.isNotEmpty == true
+        ? eventDataResult.event.generatedImages
+        : (eventDataResult.event.daySpecificData.isNotEmpty &&
+              (widget.index ?? 0) <
+                  eventDataResult.event.daySpecificData.length)
+        ? eventDataResult
+              .event
+              .daySpecificData[widget.index ?? 0]
+              .daySpecificImage
+        : [];
+
+    final totalItems = images?.length ?? 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Your Styled Look',
+          'Your styled looks',
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
 
-        // Styled look image container
-        Container(
-          width: double.infinity,
-          height:
-              MediaQuery.of(context).size.height *
-              0.4, // Fixed height for the styled look
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[200]!, width: 1),
-            image: styledImage != null
-                ? DecorationImage(
-                    image: NetworkImage(styledImage),
-                    fit: BoxFit.fill,
-                  )
-                : null,
-          ),
-          child: styledImage == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      HugeIcon(
-                        icon: HugeIcons.strokeRoundedImage01,
-                        size: 48,
-                        color: Colors.grey[400]!,
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Your styled look will appear here',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
+        // Show empty placeholder
+        if (totalItems == 0)
+          Container(
+            height: MediaQuery.of(context).size.height * 0.4,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey[200]!, width: 1),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  HugeIcon(
+                    icon: HugeIcons.strokeRoundedImage01,
+                    size: 48,
+                    color: Colors.grey[400]!,
                   ),
-                )
-              : null,
-        ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Your styled look will appear here',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        // Show styled image list
+        else
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: totalItems,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                final imageUrl = images![index];
+
+                return Column(
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              color: Colors.white,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: _buildBase64Image(
+                                imageUrl,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+
+        // Dot indicators
+        if (totalItems > 1)
+          Container(
+            padding: const EdgeInsets.only(top: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                totalItems,
+                (index) => _buildDotIndicator(index == _currentIndex),
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildActionButton() {
-    return Container(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          context.goNamed(
-            "myWardrobe",
-            extra: {
-              "isDialogBoxOpen": true,
-              "occasion": eventDataResult.event.occasion,
-              "description": (eventDataResult.event.isMultiDay)
-                  ? eventDataResult
-                        .event
-                        .daySpecificData[widget.index ?? 0]
-                        .description
-                  : eventDataResult.event.singleDayDetails?.description,
+  Widget _buildBase64Image(
+    String imageUrl, {
+    BoxFit fit = BoxFit.contain,
+    double? width,
+    double? height,
+  }) {
+    if (imageUrl.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        color: Color(0xFFFFD6D5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_not_supported, size: 60, color: Color(0xFF8D6E63)),
+            SizedBox(height: 12),
+            Text(
+              'No image available',
+              style: TextStyle(color: Color(0xFF5D4037), fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
 
-              "eventId": (eventDataResult.event.isMultiDay)
-                  ? eventDataResult.event.daySpecificData[widget.index ?? 0].id
-                  : eventDataResult.event.id,
-              "location": (eventDataResult.event.isMultiDay)
-                  ? eventDataResult
-                        .event
-                        .daySpecificData[widget.index ?? 0]
-                        .location
-                  : eventDataResult.event.singleDayDetails?.location,
-            },
+    try {
+      // // Remove data:image/jpeg;base64, prefix if present
+      // String cleanBase64 = base64String;
+      // if (base64String.contains(',')) {
+      //   cleanBase64 = base64String.split(',')[1];
+      // }
+
+      // Uint8List bytes = base64Decode(cleanBase64);
+      return Image.network(
+        imageUrl,
+        fit: fit,
+        width: width,
+        height: height,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Color(0xFFFFD6D5),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.broken_image, size: 60, color: Color(0xFF8D6E63)),
+                SizedBox(height: 12),
+                Text(
+                  'Failed to load image',
+                  style: TextStyle(color: Color(0xFF5D4037), fontSize: 14),
+                ),
+              ],
+            ),
           );
-          // print('Turn My Closet into a Look tapped');
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFFE25C7E),
-          foregroundColor: Color(0xFfF9FAFB),
-          padding: EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(32),
-          ),
-          elevation: 0,
+      );
+    } catch (e) {
+      return Container(
+        width: width,
+        height: height,
+        color: Color(0xFFFFD6D5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error, size: 60, color: Color(0xFF8D6E63)),
+            SizedBox(height: 12),
+            Text(
+              'Invalid image data',
+              style: TextStyle(color: Color(0xFF5D4037), fontSize: 14),
+            ),
+          ],
         ),
-        child: Text(
-          'Turn My Closet into a Look',
-          style: GoogleFonts.libreFranklin(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+      );
+    }
+  }
+
+  Widget _buildDotIndicator(bool isActive) {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 300),
+      margin: EdgeInsets.symmetric(horizontal: 4),
+      height: 8,
+      width: isActive ? 24 : 8,
+      decoration: BoxDecoration(
+        color: isActive ? AppColors.textPrimary : Colors.grey[300],
+        borderRadius: BorderRadius.circular(4),
       ),
     );
   }

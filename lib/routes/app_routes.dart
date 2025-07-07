@@ -138,6 +138,7 @@ class AppRouter {
           final description = extraData?['description'];
           final eventId = extraData?['eventId'];
           final loaction = extraData?['location'];
+          final dayEventId = extraData?['dayEventId'];
 
           return MainShell(
             child: MywardrobePage(
@@ -146,6 +147,7 @@ class AppRouter {
               description: description,
               eventId: eventId,
               loaction: loaction,
+              dayEventId: dayEventId,
             ),
             showBottomNavBar: true,
             showAppBar: false,
@@ -716,6 +718,7 @@ class AppRouter {
           final description = extraData?['description'];
           final eventId = extraData?['eventId'];
           final loaction = extraData?['location'];
+          final dayEventId = extraData?['dayEventId'];
           return MainShell(
             child: CreateOutfitPage(
               occasion: occasion,
@@ -724,6 +727,7 @@ class AppRouter {
               eventId: eventId,
               isDialogBoxOpen: isDialogBoxOpen,
               loaction: loaction,
+              dayEventId: dayEventId,
             ),
             showAppBar: false,
             showBackButton: false,
@@ -742,6 +746,7 @@ class AppRouter {
           final description = extraData?['description'];
           final eventId = extraData?['eventId'];
           final loaction = extraData?['location'];
+          final dayEventId = extraData?['dayEventId'];
           return MainShell(
             child: UploadOutfitPage(
               isDialogBoxOpen: isDialogBoxOpen,
@@ -749,6 +754,7 @@ class AppRouter {
               description: description,
               eventId: eventId,
               loaction: loaction,
+              dayEventId: dayEventId,
             ),
             showAppBar: false,
             showBackButton: false,

@@ -1,11 +1,13 @@
 import 'dart:developer' as Developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
+import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/services/Class/digital_wardrobe_model.dart';
 import 'package:testing2/services/DataSource/digital_wardrobe_api.dart';
 
@@ -19,6 +21,7 @@ class AllItemsWardrobePage extends StatefulWidget {
 
 class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
   bool showSearchResults = false;
+  bool _isloading = false;
   late int _selectedTabIndex;
   int _refreshKey = 0;
   late ScrollController _scrollController;
@@ -347,9 +350,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
           future: _getCategoryCounts(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: CircularProgressIndicator(color: AppColors.textPrimary),
-              );
+              return LoadingPage();
             } else if (snapshot.hasError) {
               return Center(
                 child: Column(
@@ -403,7 +404,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
                       dh,
                       dw,
                       '(${counts.counts['Tops']} Items)',
-                      Icons.checkroom,
+                      'assets/images/wardrobe/s9.svg',
                       2,
                     ),
                     _buildCategoryCard(
@@ -411,7 +412,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
                       dh,
                       dw,
                       '(${counts.counts['Bottoms']} Items)',
-                      Icons.ac_unit_sharp,
+                      'assets/images/wardrobe/s3.svg',
                       3,
                     ),
                     _buildCategoryCard(
@@ -419,15 +420,15 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
                       dh,
                       dw,
                       '(${counts.counts['Ethnic']} Items)',
-                      Icons.accessibility,
+                      'assets/images/wardrobe/s2.svg',
                       4,
                     ),
                     _buildCategoryCard(
-                      'Dresses',
+                      'Dresses & Jumpsuit',
                       dh,
                       dw,
                       '(${counts.counts['Dresses']} Items)',
-                      Icons.shopping_bag,
+                      'assets/images/wardrobe/s5.svg',
                       5,
                     ),
                     _buildCategoryCard(
@@ -435,7 +436,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
                       dh,
                       dw,
                       '(${counts.counts['co-ord set']} Items)',
-                      Icons.shopping_bag,
+                      'assets/images/wardrobe/s10.svg',
                       6,
                     ),
                     _buildCategoryCard(
@@ -443,7 +444,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
                       dh,
                       dw,
                       '(${counts.counts['Swimwear']} Items)',
-                      Icons.shopping_bag,
+                      'assets/images/wardrobe/s6.svg',
                       7,
                     ),
                     _buildCategoryCard(
@@ -451,7 +452,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
                       dh,
                       dw,
                       '(${counts.counts['Footwear']} Items)',
-                      Icons.shopping_bag,
+                      'assets/images/wardrobe/s4.svg',
                       8,
                     ),
                     _buildCategoryCard(
@@ -459,7 +460,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
                       dh,
                       dw,
                       '(${counts.counts['Accessories']} Items)',
-                      Icons.shopping_bag,
+                      'assets/images/wardrobe/s7.svg',
                       9,
                     ),
                   ],
@@ -497,9 +498,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
           future: _applyFilters(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: CircularProgressIndicator(color: AppColors.textPrimary),
-              );
+              return LoadingPage();
             } else if (snapshot.hasError) {
               return Center(
                 child: Column(
@@ -633,9 +632,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
           future: _getGarments(category: selectedCategory),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: CircularProgressIndicator(color: AppColors.textPrimary),
-              );
+              return LoadingPage();
             } else if (snapshot.hasError) {
               return Center(
                 child: Column(
@@ -1050,7 +1047,7 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
     double dh,
     double dw,
     String itemCount,
-    IconData icon,
+    String svgPath,
     int index,
   ) {
     return GestureDetector(
@@ -1069,25 +1066,25 @@ class _AllItemsWardrobePageState extends State<AllItemsWardrobePage> {
           border: Border.all(color: AppColors.textPrimary),
         ),
         child: Padding(
-          padding: EdgeInsets.all(20),
+          padding: EdgeInsets.all(8),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 40, color: Colors.grey[600]),
-              SizedBox(height: 12),
+              Expanded(child: SvgPicture.asset(svgPath)),
+              SizedBox(height: 8),
               Text(
                 title,
                 style: GoogleFonts.libreFranklin(
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: AppColors.titleTextColor,
                 ),
               ),
-              SizedBox(height: 4),
+              // SizedBox(height: 4),
               Text(
                 itemCount,
                 style: GoogleFonts.libreFranklin(
-                  fontSize: 12,
+                  fontSize: 10,
                   color: AppColors.subTitleTextColor,
                 ),
               ),

@@ -1,5 +1,6 @@
 import 'dart:developer' as Developer;
 
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -483,7 +484,18 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
             : 'Location');
 
     // --- Safely handle images ---
-    final List<String> eventImages = event.generatedImages;
+    final List<String> eventImages =
+        (event.generatedImages != null && event.generatedImages!.isNotEmpty)
+        ? event.generatedImages!
+        : (event.daySpecificData.isNotEmpty &&
+              index >= 0 &&
+              index < event.daySpecificData.length &&
+              event.daySpecificData[index].daySpecificImage != null &&
+              event.daySpecificData[index].daySpecificImage is List)
+        ? List<String>.from(
+            event.daySpecificData[index].daySpecificImage as List,
+          )
+        : <String>[];
     final bool shouldShowEnterDetails =
         eventImages.isEmpty || eventImages[0].isEmpty;
 
@@ -612,7 +624,6 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
 
             const SizedBox(width: 16),
 
-            // === Event Image ===
             Container(
               width: 100,
               height: 140,
@@ -629,22 +640,39 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
                     : null,
               ),
               child: shouldShowEnterDetails
-                  ? Center(
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
+                  ? Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: DottedBorder(
+                        options: RoundedRectDottedBorderOptions(
+                          dashPattern: [5, 5],
+                          strokeWidth: 0.96,
+                          radius: Radius.circular(32),
+                          color: Color(0xFFD34169),
+                          padding: EdgeInsets.all(8),
                         ),
-                        child: const HugeIcon(
-                          icon: HugeIcons.strokeRoundedAdd01,
-                          size: 20,
-                          color: Color(0xFFE91E63),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            HugeIcon(
+                              icon: HugeIcons.strokeRoundedAddCircle,
+                              size: 24,
+                              color: const Color(0xFFE25C7E),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Style your \nlook",
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.libreFranklin(
+                                color: const Color(0xFFE25C7E),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
-                  : null,
+                  : null, // No child when showing the image
             ),
           ],
         ),

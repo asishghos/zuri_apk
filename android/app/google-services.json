@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "276858134837",
+    "project_id": "zuriwebapp-60676",
+    "storage_bucket": "zuriwebapp-60676.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:276858134837:android:f0957650245b02a76dac7c",
+        "android_client_info": {
+          "package_name": "com.example.testing2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCt5Rh-9_4hIZK1buUjw23zxXwEep38qA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

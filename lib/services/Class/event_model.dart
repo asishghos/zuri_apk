@@ -97,7 +97,7 @@ class Event {
   final SingleDayDetails? singleDayDetails;
   final List<DaySpecificDetails> daySpecificData;
   final bool isStyled;
-  final List<String> generatedImages;
+  final List<String>? generatedImages;
 
   Event({
     required this.id,
@@ -146,7 +146,7 @@ class DaySpecificDetails {
   final String location;
   final String description;
   final ReminderDetails reminder;
-  final String? daySpecificImage;
+  final List<String>? daySpecificImage;
 
   DaySpecificDetails({
     required this.id,
@@ -161,14 +161,16 @@ class DaySpecificDetails {
 
   factory DaySpecificDetails.fromJson(Map<String, dynamic> json) {
     return DaySpecificDetails(
-      id: json['id'],
+      id: json['_id'] ?? json['id'] ?? '',
       date: DateTime.parse(json['date']),
       eventName: json['eventName'],
       eventTime: json['eventTime'],
       location: json['location'],
       description: json['description'],
       reminder: ReminderDetails.fromJson(json['reminder']),
-      daySpecificImage: json['daySpecificImage'],
+      daySpecificImage: List<String>.from(json['daySpecificImage'] ?? []),
+
+      // daySpecificImage: json['daySpecificImage'],
     );
   }
 }
@@ -233,7 +235,7 @@ class DayEventItem {
   final String location;
   final String description;
   final ReminderDetails reminder;
-  final String? daySpecificImage;
+  final List<String>? daySpecificImage;
   final bool isStyled;
   final List<String> generatedImages;
 
@@ -265,7 +267,9 @@ class DayEventItem {
       location: json['location'],
       description: json['description'],
       reminder: ReminderDetails.fromJson(json['reminder']),
-      daySpecificImage: json['daySpecificImage'],
+      daySpecificImage: List<String>.from(json['daySpecificImage'] ?? []),
+
+      // daySpecificImage: json['daySpecificImage'],
       isStyled: json['isStyled'] ?? false,
       generatedImages: List<String>.from(json['generatedImages'] ?? []),
     );

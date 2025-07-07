@@ -1,6 +1,7 @@
 import 'dart:developer' as Developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -18,6 +19,7 @@ class MywardrobePage extends StatefulWidget {
   final String? description;
   final String? eventId;
   final String? loaction;
+  final String? dayEventId;
 
   const MywardrobePage({
     super.key,
@@ -26,6 +28,7 @@ class MywardrobePage extends StatefulWidget {
     this.description,
     this.eventId,
     this.loaction,
+    this.dayEventId,
   });
   @override
   _MywardrobePageState createState() => _MywardrobePageState();
@@ -57,21 +60,37 @@ class _MywardrobePageState extends State<MywardrobePage> {
     }
   }
 
-  Future<CategoryCounts> _getCategoryCounts() async {
+  bool _isLoading = false;
+
+  CategoryCounts? _categoryCounts;
+  Future<void> _getCategoryCounts() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final result = await WardrobeApiService.fetchCategoryCounts();
     if (result != null) {
       Developer.log(result.counts.toString());
-      return result;
+      setState(() {
+        _categoryCounts = result;
+      });
     } else {
       Developer.log("❌ Couldn't fetch category counts");
-      return CategoryCounts(counts: {});
+      setState(() {
+        _categoryCounts = CategoryCounts(counts: {});
+      });
     }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
   void initState() {
     super.initState();
     _checkLoginStatus();
+    _getCategoryCounts();
     // Use WidgetsBinding to ensure dialog shows after build completes
     if (widget.isDialogBoxOpen != null &&
         widget.isDialogBoxOpen! &&
@@ -98,7 +117,7 @@ class _MywardrobePageState extends State<MywardrobePage> {
     double dh = MediaQuery.of(context).size.height;
     double dw = MediaQuery.of(context).size.width;
 
-    if (_isCheckingAuth) {
+    if (_isCheckingAuth || _isLoading) {
       return LoadingPage();
     }
     return SafeArea(
@@ -244,8 +263,8 @@ class _MywardrobePageState extends State<MywardrobePage> {
                             'Tops',
                             dh,
                             dw,
-                            '(10 Items)',
-                            Icons.checkroom,
+                            '(${_categoryCounts?.counts['Tops'] ?? 0} Items)',
+                            'assets/images/wardrobe/s9.svg',
                             () {
                               context.goNamed('allItemsWardrobe', extra: 2);
                             },
@@ -254,8 +273,8 @@ class _MywardrobePageState extends State<MywardrobePage> {
                             'Bottoms',
                             dh,
                             dw,
-                            '(11 Items)',
-                            Icons.ac_unit_sharp,
+                            '(${_categoryCounts?.counts['Bottoms'] ?? 0} Items)',
+                            'assets/images/wardrobe/s3.svg',
                             () {
                               context.goNamed('allItemsWardrobe', extra: 3);
                             },
@@ -264,20 +283,20 @@ class _MywardrobePageState extends State<MywardrobePage> {
                             'Ethnic',
                             dh,
                             dw,
-                            '(19 Items)',
-                            Icons.accessibility,
+                            '(${_categoryCounts?.counts['Ethnic'] ?? 0} Items)',
+                            'assets/images/wardrobe/s2.svg',
                             () {
                               context.goNamed('allItemsWardrobe', extra: 4);
                             },
                           ),
                           _buildCategoryCard(
-                            'Footwear',
+                            'Dresses',
                             dh,
                             dw,
-                            '(5 Items)',
-                            Icons.shopping_bag,
+                            '(${_categoryCounts?.counts['Dresses'] ?? 0} Items)',
+                            'assets/images/wardrobe/s5.svg',
                             () {
-                              context.goNamed('allItemsWardrobe', extra: 8);
+                              context.goNamed('allItemsWardrobe', extra: 5);
                             },
                           ),
                         ],
@@ -419,7 +438,7 @@ class _MywardrobePageState extends State<MywardrobePage> {
     double dh,
     double dw,
     String itemCount,
-    IconData icon,
+    String svgPath,
     VoidCallback onTap,
   ) {
     return GestureDetector(
@@ -433,12 +452,12 @@ class _MywardrobePageState extends State<MywardrobePage> {
           border: Border.all(color: AppColors.textPrimary),
         ),
         child: Padding(
-          padding: EdgeInsets.all(20),
+          padding: EdgeInsets.all(8),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 40, color: Colors.grey[600]),
-              SizedBox(height: 12),
+              Expanded(child: SvgPicture.asset(svgPath)),
+              SizedBox(height: 4),
               Text(
                 title,
                 style: GoogleFonts.libreFranklin(
@@ -447,7 +466,7 @@ class _MywardrobePageState extends State<MywardrobePage> {
                   color: AppColors.titleTextColor,
                 ),
               ),
-              SizedBox(height: 4),
+              // SizedBox(height: 4),
               Text(
                 itemCount,
                 style: GoogleFonts.libreFranklin(
@@ -604,6 +623,9 @@ class _MywardrobePageState extends State<MywardrobePage> {
                       extraData["eventId"] = widget.eventId;
                     if (widget.loaction != null && widget.loaction!.isNotEmpty)
                       extraData["location"] = widget.loaction;
+                    if (widget.dayEventId != null &&
+                        widget.dayEventId!.isNotEmpty)
+                      extraData["dayEventId"] = widget.dayEventId;
                     if (extraData.isNotEmpty) {
                       extraData["isDialogBoxOpen"] =
                           true; // add this only if other data exists
@@ -618,6 +640,7 @@ class _MywardrobePageState extends State<MywardrobePage> {
                     Developer.log("description: ${widget.description}");
                     Developer.log("eventId: ${widget.eventId}");
                     Developer.log("location: ${widget.loaction}");
+                    Developer.log("dayEventId: ${widget.dayEventId}");
                   },
                   rightIcon: true,
                 ),
@@ -728,7 +751,9 @@ class _MywardrobePageState extends State<MywardrobePage> {
                       extraData["eventId"] = widget.eventId;
                     if (widget.loaction != null && widget.loaction!.isNotEmpty)
                       extraData["location"] = widget.loaction;
-
+                    if (widget.dayEventId != null &&
+                        widget.dayEventId!.isNotEmpty)
+                      extraData["dayEventId"] = widget.dayEventId;
                     if (extraData.isNotEmpty) {
                       extraData["isDialogBoxOpen"] =
                           true; // add this only if other data exists
@@ -744,6 +769,7 @@ class _MywardrobePageState extends State<MywardrobePage> {
                     Developer.log("description: ${widget.description}");
                     Developer.log("eventId: ${widget.eventId}");
                     Developer.log("location: ${widget.loaction}");
+                    Developer.log("dayEventId: ${widget.dayEventId}");
                   },
                   rightIcon: true,
                 ),

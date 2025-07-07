@@ -18,6 +18,7 @@ class UploadOutfitPage extends StatefulWidget {
   final String? description;
   final String? eventId;
   final String? loaction;
+  final String? dayEventId;
   UploadOutfitPage({
     super.key,
     this.isDialogBoxOpen,
@@ -25,6 +26,7 @@ class UploadOutfitPage extends StatefulWidget {
     this.description,
     this.eventId,
     this.loaction,
+    this.dayEventId,
   });
   @override
   _UploadOutfitPageState createState() => _UploadOutfitPageState();
@@ -515,7 +517,8 @@ class _UploadOutfitPageState extends State<UploadOutfitPage> {
                 extraData["eventId"] = widget.eventId;
               if (widget.loaction != null && widget.loaction!.isNotEmpty)
                 extraData["location"] = widget.loaction;
-
+              if (widget.dayEventId != null && widget.dayEventId!.isNotEmpty)
+                extraData["dayEventId"] = widget.dayEventId;
               if (extraData.isNotEmpty) {
                 extraData["isDialogBoxOpen"] = true;
               }

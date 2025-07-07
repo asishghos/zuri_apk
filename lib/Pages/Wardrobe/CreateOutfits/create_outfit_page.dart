@@ -27,6 +27,7 @@ class CreateOutfitPage extends StatefulWidget {
   final String? description;
   final String? eventId;
   final String? loaction;
+  final String? dayEventId;
 
   CreateOutfitPage({
     Key? key,
@@ -36,6 +37,7 @@ class CreateOutfitPage extends StatefulWidget {
     this.description,
     this.eventId,
     this.loaction,
+    this.dayEventId,
   }) : super(key: key);
   @override
   State<CreateOutfitPage> createState() => _CreateOutfitPageState();
@@ -334,14 +336,17 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
   List<String> _styledImageUrls = [];
   Future<void> _lockingForEvent(
     String eventId,
+    String? dayEventId,
     List<String> styledImageUrls,
   ) async {
     final response = await EventApiService.addStyledImageToEvent(
       eventId: eventId,
       styledImageUrls: styledImageUrls,
+      dayEventId: dayEventId,
     );
     if (response != null) {
       showSuccessSnackBar(context, "Images add successfully in event.");
+      // context.goNamed();
     } else {
       showErrorSnackBar(context, "Failed to add images in event.");
     }
@@ -955,6 +960,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                   else {
                                     await _lockingForEvent(
                                       widget.eventId!,
+                                      widget.dayEventId,
                                       _styledImageUrls,
                                     );
                                   }
