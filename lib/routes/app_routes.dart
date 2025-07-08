@@ -70,13 +70,22 @@ class AppRouter {
       GoRoute(
         path: '/eventmainscreen',
         name: 'eventmainscreen',
-        builder: (context, state) => MainShell(
-          child: CalendarEventsPage(),
-          showBottomNavBar: true,
-          showAppBar: false,
-          showBackButton: false,
-        ),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+
+          return MainShell(
+            child: CalendarEventsPage(
+              eventId: extra?['eventId'],
+              dayEventId: extra?['dayEventId'],
+              openDayEventDetails: extra?['openDayEventDetails'] ?? false,
+            ),
+            showBottomNavBar: true,
+            showAppBar: false,
+            showBackButton: false,
+          );
+        },
       ),
+
       // 1st page for everytime user open this page
       GoRoute(
         path: '/splash',

@@ -2,14 +2,18 @@ import 'dart:developer' as Developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
+import 'package:testing2/Global/Function/global_function.dart';
+import 'package:testing2/Global/Widget/global_dialogbox.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Pages/Loading/loading_page.dart';
-import 'package:testing2/Pages/Magazine/article_detail_screen.dart';
+import 'package:testing2/Pages/Magazine/magazine_detail_screen.dart';
 import 'package:testing2/services/Class/zuri_magqazine_model.dart';
+import 'package:testing2/services/DataSource/auth_api.dart';
 import 'package:testing2/services/DataSource/zuri_magazine_api.dart';
 import 'filter_overlay.dart';
 
@@ -24,48 +28,68 @@ class _MagazineScreenState extends State<MagazineScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _modalScrollController = ScrollController();
 
-  List<ZuriArticle> _articles = [];
-  List<ZuriArticle> filteredArticles = [];
-  String selectedCategory = 'Elegant Luxury on a Budget';
+  List<ZuriMagazine> _magzines = [];
+  List<ZuriMagazine> _savedmagzine = [];
+  List<ZuriMagazine> filteredmagzines = [];
+  List<String> _categories = [];
+  String selectedTab = 'All';
   int notificationCount = 3;
+  bool _isSaving = false;
+  bool _isLoggedIn = true;
+  bool _isCheckingAuth = true;
 
-  // // Helper method to get saved articles count
-  // int get savedArticlesCount =>
-  //     _articles.where((article) => article.isSaved ?? false).length;
-
-  // Combined future for loading both categories and articles
-  Future<Map<String, dynamic>> _loadMagazineData() async {
+  void _checkLoginStatus() async {
     try {
-      // Load categories
-      final categoriesResponse =
-          await ZuriMagazineApiService.getAllCategoriesMagazine();
-      Developer.log('Categories response: ${categoriesResponse.toString()}');
-
-      // Load articles by category (using the first category or a default one)
-      final articlesResponse =
-          await ZuriMagazineApiService.getByCategoryMagazine("beauty");
-      Developer.log('Articles response: ${articlesResponse.toString()}');
-      Developer.log(articlesResponse[0].id.toString());
-
-      return {
-        'categories': categoriesResponse.data,
-        'articles': articlesResponse,
-      };
+      final isLoggedIn = await AuthApiService.isLoggedIn();
+      // Check if widget is still mounted before calling setState
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = isLoggedIn;
+          _isCheckingAuth = false;
+        });
+      }
     } catch (e) {
-      Developer.log('Error loading magazine data: ${e.toString()}');
-      return {'categories': <String>[], 'articles': <ZuriArticle>[]};
+      // Check if widget is still mounted before calling setState
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = false;
+          _isCheckingAuth = false;
+        });
+      }
     }
   }
 
-  Future<void> _getByIdMagazine() async {
+  // Add this method to your class
+  // bool _isMagazineSaved(String magazineId) {
+  //   return _savedMagazineIds.contains(magazineId);
+  // }
+
+  // In the MagazineCard widget, replace:
+  // (magzine.isSaved ?? false)
+  // with:
+  // _isMagazineSaved(magzine.id)
+
+  // Combined future for loading both categories and magzines
+  Future<Map<String, dynamic>> _loadMagazineData() async {
     try {
-      final responce = await ZuriMagazineApiService.getByIdMagazine(
-        "6864cd9b8200461d6f222b65",
-      );
-      Developer.log(responce.toString());
+      // Load categories
+      final allMagazine = await ZuriMagazineApiService.allMagazine();
+      _magzines = allMagazine;
+      final categoriesResponse =
+          await ZuriMagazineApiService.getAllCategoriesMagazine();
+      Developer.log('Categories response: ${categoriesResponse.toString()}');
+      _categories = categoriesResponse.data;
+
+      return {'categories': categoriesResponse.data, 'magzines': _magzines};
     } catch (e) {
-      Developer.log(e.toString());
+      Developer.log('Error loading magazine data: ${e.toString()}');
+      return {'categories': <String>[], 'magzines': <ZuriMagazine>[]};
     }
+  }
+
+  Future<void> _fetchSavedMagazine() async {
+    final responce = await ZuriMagazineApiService.getAllBookmarkedArticles();
+    _savedmagzine = responce;
   }
 
   @override
@@ -77,44 +101,85 @@ class _MagazineScreenState extends State<MagazineScreen> {
 
   @override
   void initState() {
-    _getByIdMagazine();
     super.initState();
+    selectedTab = 'All'; // Set default tab
+    _fetchSavedMagazine(); // Fetch saved magazines on init
   }
 
-  void _filterArticles(String query) {
+  void _filtermagzines(String query) {
     setState(() {
       if (query.isEmpty) {
-        filteredArticles = _articles;
+        // If search is empty, apply category filter
+        _filterByCategory(selectedTab);
       } else {
-        filteredArticles = _articles
-            .where(
-              (article) => (article.category.toLowerCase().contains(
-                query.toLowerCase(),
-              )),
-            )
-            .toList();
+        // Apply search filter on the currently selected category
+        List<ZuriMagazine> baseList = selectedTab == 'All'
+            ? _magzines
+            : _magzines
+                  .where(
+                    (magzine) =>
+                        magzine.category.toLowerCase() ==
+                        selectedTab.toLowerCase(),
+                  )
+                  .toList();
+
+        filteredmagzines = baseList.where((magzine) {
+          final title = magzine.title.toLowerCase();
+          final content = magzine.content.toLowerCase();
+          final category = magzine.category.toLowerCase();
+          final author = magzine.authorName.toLowerCase();
+          final searchQuery = query.toLowerCase();
+
+          return title.contains(searchQuery) ||
+              content.contains(searchQuery) ||
+              category.contains(searchQuery) ||
+              author.contains(searchQuery);
+        }).toList();
       }
     });
   }
 
-  // void _toggleSaved(String articleId) {
-  //   setState(() {
-  //     final index = _articles.indexWhere((article) => article.id == articleId);
-  //     if (index != -1) {
-  //       _articles[index].isSaved = !(_articles[index].isSaved ?? false);
-  //       // Also update filtered articles
-  //       final filteredIndex = filteredArticles.indexWhere(
-  //         (article) => article.id == articleId,
-  //       );
-  //       if (filteredIndex != -1) {
-  //         filteredArticles[filteredIndex].isSaved = _articles[index].isSaved;
-  //       }
-  //     }
-  //   });
-  // }
+  void _filterByCategory(String category) {
+    setState(() {
+      selectedTab = category;
+      if (category == 'All' || category.isEmpty) {
+        filteredmagzines = _magzines;
+      } else {
+        filteredmagzines = _magzines.where((magzine) {
+          return magzine.category.toLowerCase() == category.toLowerCase();
+        }).toList();
+      }
 
-  void _shareArticle(ZuriArticle article) {
-    Share.share('Check out this article: ${article.title}');
+      // Apply search filter on top of category filter if search is active
+      if (_searchController.text.isNotEmpty) {
+        _filtermagzines(_searchController.text);
+      }
+    });
+  }
+
+  Future<void> _toggleToSaveMagazine(String magazineId) async {
+    setState(() {
+      _isSaving = true;
+    });
+    try {
+      await ZuriMagazineApiService.toggleBookmark(magazineId);
+      await _fetchSavedMagazine();
+      setState(() {}); // Refresh UI
+    } catch (e) {
+      Developer.log(e.toString());
+      if (mounted) {
+        showErrorSnackBar(context, "Failed to save/ remove magazine");
+      }
+      // Optionally show error
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+
+  void _sharemagzine(ZuriMagazine magzine) {
+    Share.share('Check out this magzine: ${magzine.title}');
   }
 
   void _showFilterOverlay(List<String> categories) {
@@ -136,6 +201,88 @@ class _MagazineScreenState extends State<MagazineScreen> {
     );
   }
 
+  Widget _buildSearchBar(List<String> categories) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 20, left: 20, bottom: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: GlobalSearchBar(
+              hintText: 'Search magazines...',
+              onChanged: _filtermagzines,
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => _showFilterOverlay(categories),
+            child: Container(
+              width: 62,
+              height: 50,
+              decoration: BoxDecoration(
+                color: AppColors.textPrimary,
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedFilterHorizontal,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget _buildCategoriesSection(List<String> categories) {
+  //   // Add "All" category at the beginning
+  //   final allCategories = ['All', ...categories];
+
+  //   return SizedBox(
+  //     height: 42,
+  //     child: ListView.builder(
+  //       scrollDirection: Axis.horizontal,
+  //       padding: const EdgeInsets.symmetric(horizontal: 20),
+  //       itemCount: allCategories.length,
+  //       itemBuilder: (context, index) {
+  //         final category = allCategories[index];
+  //         final isSelected = selectedTab == category;
+  //         return Padding(
+  //           padding: const EdgeInsets.only(right: 8),
+  //           child: GestureDetector(
+  //             onTap: () => _filterByCategory(category),
+  //             child: Container(
+  //               padding: const EdgeInsets.symmetric(
+  //                 horizontal: 16,
+  //                 vertical: 12,
+  //               ),
+  //               decoration: BoxDecoration(
+  //                 color: isSelected
+  //                     ? AppColors.textPrimary
+  //                     : const Color(0xFFFFF7F8),
+  //                 borderRadius: BorderRadius.circular(32),
+  //                 border: Border.all(
+  //                   color: isSelected
+  //                       ? Colors.transparent
+  //                       : AppColors.textPrimary,
+  //                   width: 0.5,
+  //                 ),
+  //               ),
+  //               child: Text(
+  //                 category,
+  //                 style: GoogleFonts.libreFranklin(
+  //                   color: isSelected ? Colors.white : AppColors.textPrimary,
+  //                   fontSize: 12,
+  //                   fontWeight: FontWeight.w500,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -154,7 +301,7 @@ class _MagazineScreenState extends State<MagazineScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'Failed to load magazine data',
-                    style: TextStyle(
+                    style: GoogleFonts.libreFranklin(
                       fontSize: 16,
                       color: Colors.grey[600],
                       fontWeight: FontWeight.w500,
@@ -163,7 +310,10 @@ class _MagazineScreenState extends State<MagazineScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Please check your connection and try again',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                    style: GoogleFonts.libreFranklin(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -181,153 +331,209 @@ class _MagazineScreenState extends State<MagazineScreen> {
 
           final data = snapshot.data!;
           final categories = data['categories'] as List<String>;
-          final articles = data['articles'] as List<ZuriArticle>;
+          final magzines = data['magzines'] as List<ZuriMagazine>;
 
-          // Initialize articles and filtered articles if not already done
-          if (_articles.isEmpty && articles.isNotEmpty) {
-            _articles = articles;
-            filteredArticles = articles;
+          // Initialize magazines and filtered magazines if not already done
+          if (_magzines.isEmpty && magzines.isNotEmpty) {
+            _magzines = magzines;
+            filteredmagzines = magzines;
           }
 
-          return Column(
-            children: [
-              _buildHeader(),
-              // Search Bar
-              Padding(
-                padding: const EdgeInsets.only(right: 20, left: 20, bottom: 20),
-                child: Row(
-                  children: [
-                    Expanded(child: GlobalSearchBar()),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => _showFilterOverlay(categories),
-                      child: Container(
-                        width: 62,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: AppColors.textPrimary,
-                          borderRadius: BorderRadius.circular(32),
-                        ),
-                        child: HugeIcon(
-                          icon: HugeIcons.strokeRoundedFilterHorizontal,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          // Tab bar: All, Saved, Categories
+          final List<String> tabs = ['All', 'Saved', ...categories];
 
-              // Categories
-              if (categories.isNotEmpty)
-                SizedBox(
-                  height: 42,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      final isSelected = selectedCategory == category;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedCategory = category;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.textPrimary
-                                  : const Color(0xFFFFF7F8),
-                              borderRadius: BorderRadius.circular(32),
-                              border: Border.all(
-                                color: isSelected
-                                    ? Colors.transparent
-                                    : AppColors.textPrimary,
-                                width: 0.5,
+          List<ZuriMagazine> displayMagazines;
+          if (selectedTab == 'All') {
+            displayMagazines = _magzines;
+          } else if (selectedTab == 'Saved') {
+            displayMagazines = _savedmagzine;
+          } else {
+            displayMagazines = _magzines
+                .where(
+                  (magzine) =>
+                      magzine.category.toLowerCase() ==
+                      selectedTab.toLowerCase(),
+                )
+                .toList();
+          }
+
+          // Apply search filter if needed
+          if (_searchController.text.isNotEmpty) {
+            final searchQuery = _searchController.text.toLowerCase();
+            displayMagazines = displayMagazines.where((magzine) {
+              final title = magzine.title.toLowerCase();
+              final content = magzine.content.toLowerCase();
+              final category = magzine.category.toLowerCase();
+              final author = magzine.authorName.toLowerCase();
+              return title.contains(searchQuery) ||
+                  content.contains(searchQuery) ||
+                  category.contains(searchQuery) ||
+                  author.contains(searchQuery);
+            }).toList();
+          }
+
+          return Stack(
+            children: [
+              Column(
+                children: [
+                  _buildHeader(),
+                  // Search Bar
+                  _buildSearchBar(categories),
+                  // Tab Bar
+                  SizedBox(
+                    height: 48,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      itemCount: tabs.length,
+                      itemBuilder: (context, index) {
+                        final tab = tabs[index];
+                        final isSelected = selectedTab == tab;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedTab = tab;
+                                _searchController.clear();
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
-                            ),
-                            child: Text(
-                              category,
-                              style: TextStyle(
+                              decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.white
-                                    : AppColors.textPrimary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                                    ? AppColors.textPrimary
+                                    : const Color(0xFFFFF7F8),
+                                borderRadius: BorderRadius.circular(32),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.transparent
+                                      : AppColors.textPrimary,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Text(
+                                tab,
+                                style: GoogleFonts.libreFranklin(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
 
-              const SizedBox(height: 24),
-              // Articles List
-              Expanded(
-                child: filteredArticles.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.article_outlined,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No articles found',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Try adjusting your search or filters',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: filteredArticles.length,
-                        itemBuilder: (context, index) {
-                          final article = filteredArticles[index];
-                          return ArticleCard(
-                            article: article,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ArticleDetailScreen(
-                                    magazineid: article.id,
+                  // Magazines List
+                  Expanded(
+                    child: displayMagazines.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.article_outlined,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  selectedTab == 'Saved'
+                                      ? 'No saved magazines found'
+                                      : 'No magazines found',
+                                  style: GoogleFonts.libreFranklin(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Try adjusting your search or filters',
+                                  style: GoogleFonts.libreFranklin(
+                                    fontSize: 14,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: displayMagazines.length,
+                            itemBuilder: (context, index) {
+                              final magzine = displayMagazines[index];
+                              return MagazineCard(
+                                savedmagzine: _savedmagzine,
+                                magzine: magzine,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          MagazineDetailScreen(
+                                            magazineid: magzine.id,
+                                          ),
+                                    ),
+                                  );
+                                },
+                                onSave: () async {
+                                  final isLoggedIn =
+                                      await AuthApiService.isLoggedIn();
+                                  if (isLoggedIn) {
+                                    _toggleToSaveMagazine(magzine.id);
+                                  } else {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => GlobalDialogBox(
+                                        title: "Please Sign Up to Continue",
+                                        description:
+                                            "Babe, I can't save your closet—or decode \nyour best colors and fits—unless you sign up. \nLet's make this official? Pretty please!",
+                                        buttonNeed: true,
+                                        buttonText:
+                                            "OK, make me next-level stylish",
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          context.goNamed('scan&discover');
+                                        },
+                                      ),
+                                    );
+                                  }
+                                },
+                                onShare: () => _sharemagzine(magzine),
                               );
                             },
-                            onSave: () {},
-                            // onSave: () => _toggleSaved(article.id ?? ''),
-                            onShare: () => _shareArticle(article),
-                          );
-                        },
-                      ),
+                          ),
+                  ),
+                ],
               ),
+              // if (!_isLoggedIn)
+              //   Container(
+              //     color: Colors.black.withOpacity(0.5),
+              //     child: Center(
+              //       child: GlobalDialogBox(
+              //         title: "Please Sign Up to Continue",
+              //         description:
+              //             "Babe, I can't save your closet—or decode \nyour best colors and fits—unless you sign up. \nLet's make this official? Pretty please!",
+              //         buttonNeed: true,
+              //         buttonText: "OK, make me next-level stylish",
+              //         onTap: () {
+              //           context.goNamed('scan&discover');
+              //         },
+              //       ),
+              //     ),
+              //   ),
             ],
           );
         },
@@ -343,14 +549,6 @@ class _MagazineScreenState extends State<MagazineScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           SvgPicture.asset('assets/images/Zuri/zm.svg'),
-          // Text(
-          //   'Z-Magazine',
-          //   style: GoogleFonts.libreFranklin(
-          //     color: AppColors.titleTextColor,
-          //     fontSize: 18,
-          //     fontWeight: FontWeight.w600,
-          //   ),
-          // ),
           Row(
             children: [
               Container(
@@ -425,15 +623,17 @@ class _MagazineScreenState extends State<MagazineScreen> {
   }
 }
 
-class ArticleCard extends StatelessWidget {
-  final ZuriArticle article;
+class MagazineCard extends StatelessWidget {
+  final List<ZuriMagazine> savedmagzine;
+  final ZuriMagazine magzine;
   final VoidCallback onTap;
   final VoidCallback onSave;
   final VoidCallback onShare;
 
-  const ArticleCard({
+  const MagazineCard({
     Key? key,
-    required this.article,
+    required this.savedmagzine,
+    required this.magzine,
     required this.onTap,
     required this.onSave,
     required this.onShare,
@@ -453,56 +653,68 @@ class ArticleCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Article Content
+            // Magazine Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   // Category Badge with "by Author"
                   Row(
                     children: [
-                      Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE91E63),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Image.network(
-                            article.authorProfilePic,
-                            width: 8,
-                            height: 8,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          magzine.authorProfilePic,
+                          width: 24,
+                          height: 24,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
                                 Icons.person,
-                                size: 8,
-                                color: Colors.white,
-                              );
-                            },
-                          ),
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: RichText(
                           text: TextSpan(
-                            children:
-                                '${article.category} by ${article.authorName}'
-                                    .split(' ')
-                                    .map(
-                                      (word) => TextSpan(
-                                        text: '$word ',
-                                        style: TextStyle(
-                                          fontWeight: word == 'by'
-                                              ? FontWeight.w400
-                                              : FontWeight.w700,
-                                          fontSize: 12,
-                                          color: const Color(0xFF9CA3AF),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
+                            children: [
+                              TextSpan(
+                                text: GlobalFunction.capitalizeFirstLetter(
+                                  magzine.category,
+                                ),
+                                style: GoogleFonts.libreFranklin(
+                                  color: Color(0xFF1E1E1E),
+                                  fontSize: 12,
+                                ),
+                              ),
+                              TextSpan(
+                                text: " by ",
+                                style: GoogleFonts.libreFranklin(
+                                  color: AppColors.subTitleTextColor,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              TextSpan(
+                                text: magzine.authorName,
+                                style: GoogleFonts.libreFranklin(
+                                  color: Color(0xFF1E1E1E),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -512,8 +724,8 @@ class ArticleCard extends StatelessWidget {
 
                   // Title
                   Text(
-                    article.title,
-                    style: const TextStyle(
+                    magzine.title,
+                    style: GoogleFonts.libreFranklin(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
@@ -525,14 +737,12 @@ class ArticleCard extends StatelessWidget {
 
                   // Description
                   Text(
-                    article.content,
-                    style: const TextStyle(
+                    magzine.content,
+                    style: GoogleFonts.libreFranklin(
                       fontSize: 14,
                       color: AppColors.titleTextColor,
-                      height: 1.4,
-                      fontWeight: FontWeight.w400,
                     ),
-                    maxLines: 2,
+                    maxLines: 4,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 16),
@@ -542,11 +752,8 @@ class ArticleCard extends StatelessWidget {
                     children: [
                       Text(
                         '5 min read',
-                        style: const TextStyle(
+                        style: GoogleFonts.libreFranklin(
                           fontSize: 10,
-                          height: 2.2,
-                          letterSpacing: -0.02 * 10,
-                          fontWeight: FontWeight.w400,
                           color: Color(0xFF131927),
                         ),
                       ),
@@ -557,89 +764,45 @@ class ArticleCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(width: 12),
-            // Article Image and Action Buttons
+            const SizedBox(width: 8),
+            // Magazine Image and Action Buttons
             Column(
               children: [
-                // Article Image with graceful error handling
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
+                  borderRadius: BorderRadius.circular(32),
+                  child: Image.network(
+                    magzine.bannerImage,
                     width: 100,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Image.network(
-                      article.bannerImage,
-                      width: 100,
-                      height: 120,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          width: 100,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
-                              strokeWidth: 2,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildPlaceholderImage();
-                      },
-                    ),
+                    height: 155,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildPlaceholderImage();
+                    },
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 // Action Buttons below image
                 Row(
                   children: [
                     GestureDetector(
-                      onTap: onShare,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.share_outlined,
-                          size: 16,
-                          color: Color(0xFF6B7280),
-                        ),
+                      onTap: onSave,
+                      child: HugeIcon(
+                        icon: (savedmagzine.any((m) => m.id == magzine.id))
+                            ? HugeIcons.strokeRoundedBookmark02
+                            : HugeIcons.strokeRoundedBookmark02,
+                        size: 24,
+                        color: (savedmagzine.any((m) => m.id == magzine.id))
+                            ? AppColors.textPrimary
+                            : Color(0xFF394050),
                       ),
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: onSave,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE91E63),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.bookmark,
-                          size: 16,
-                          color: const Color(0xFF6B7280),
-                        ),
+                      onTap: onShare,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedShare08,
+                        size: 24,
+                        color: Color(0xFF394050),
                       ),
                     ),
                   ],
@@ -655,10 +818,10 @@ class ArticleCard extends StatelessWidget {
   Widget _buildPlaceholderImage() {
     return Container(
       width: 100,
-      height: 120,
+      height: 155,
       decoration: BoxDecoration(
         color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(32),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -672,7 +835,10 @@ class ArticleCard extends StatelessWidget {
           Text(
             'Image\nUnavailable',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey[500], fontSize: 10),
+            style: GoogleFonts.libreFranklin(
+              color: Colors.grey[500],
+              fontSize: 10,
+            ),
           ),
         ],
       ),

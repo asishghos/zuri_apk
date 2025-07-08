@@ -193,6 +193,7 @@ class MainShell extends StatelessWidget {
                   _buildNavItem(
                     "assets/images/navbar/home-10 (3).svg",
                     'Home',
+
                     0,
                     currentIndex,
                     handleNavTap,
@@ -232,13 +233,14 @@ class MainShell extends StatelessWidget {
                   _buildNavItem(
                     "assets/images/navbar/wardrobe-01.svg",
                     'Zuri Closet',
+
                     2,
                     currentIndex,
                     handleNavTap,
                   ),
                   _buildNavItem(
                     "assets/images/navbar/mastodon.svg",
-                    'Z-Magazine',
+                    null,
                     3,
                     currentIndex,
                     handleNavTap,
@@ -246,6 +248,7 @@ class MainShell extends StatelessWidget {
                   _buildNavItem(
                     "assets/images/navbar/calendar-03.svg",
                     'Events',
+
                     4,
                     currentIndex,
                     handleNavTap,
@@ -259,7 +262,7 @@ class MainShell extends StatelessWidget {
 
   Widget _buildNavItem(
     String svgpath,
-    String label,
+    String? labelText,
     int index,
     int currentIndex,
     Function(int) onTap,
@@ -285,20 +288,24 @@ class MainShell extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                label,
-                style: GoogleFonts.libreFranklin(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected
-                      ? AppColors.textPrimary
-                      : Colors.grey.shade600,
-                  // letterSpacing: -0.2,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              (labelText != null)
+                  ? Text(
+                      labelText,
+                      style: GoogleFonts.libreFranklin(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: isSelected
+                            ? AppColors.textPrimary
+                            : Colors.grey.shade600,
+                        // letterSpacing: -0.2,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : isSelected
+                  ? SvgPicture.asset('assets/images/navbar/Frame 1634.svg')
+                  : SvgPicture.asset('assets/images/navbar/Frame 1634 (1).svg'),
             ],
           ),
         ),

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
+import 'package:testing2/services/DataSource/product_api.dart';
 
 class GlobalFunction {
   static Future<File> urlToFile(String imageUrl) async {
@@ -44,5 +45,34 @@ class GlobalFunction {
     await file.writeAsBytes(bytes);
 
     return file;
+  }
+
+  Future<void> addWishList() async {
+    final productData = {
+      "productId": "123",
+      "productTitle": "Stylish Shirt",
+      "productImage": "https://img.com/shirt.png",
+      "price": 999,
+      "originalPrice": 1299,
+      "discountPercent": 23,
+      "platform": "Myntra",
+      "rating": 4.5,
+      "productUrl": "https://myntra.com/product/123",
+    };
+    try {
+      final result = await ProductApiServices.toggleWishlistItem(productData);
+      if (result['success']) {
+        print(result['message']);
+      } else {
+        print('Error: ${result['message']}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  static String capitalizeFirstLetter(String input) {
+    if (input.isEmpty) return input;
+    return input[0].toUpperCase() + input.substring(1);
   }
 }

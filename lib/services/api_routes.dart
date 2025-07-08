@@ -1,6 +1,6 @@
 class ApiRoutes {
   // Base url
-  static const String baseUrl = 'https://9434-223-185-30-68.ngrok-free.app';
+  static const String baseUrl = 'https://0e43686a6008.ngrok-free.app';
 
   // Style Analyze routes
   static const String manualAnalyze = '${baseUrl}/api/analyze/manual';
@@ -66,6 +66,11 @@ class ApiRoutes {
   static const String getByCategoryMagazine =
       '${baseUrl}/api/magazine/articlesByCategory';
   static const String getByIdMagazine = '${baseUrl}/api/magazine/article';
+  static const String toggleBookmarkMagazine =
+      '${baseUrl}/api/magazine/toggleBookmark';
+  static const String getBookmarksMagazine =
+      '${baseUrl}/api/magazine/getBookmarks';
+  static const String allMagazine = '${baseUrl}/api/magazine/allArticles';
 
   // Uploaded Look routes
   static const String addUploadedLooks = '${baseUrl}/api/uploadedLooks/addLook';
@@ -75,6 +80,8 @@ class ApiRoutes {
   static const String deleteUploadedLook =
       '${baseUrl}/api/uploadedLooks/deleteLook';
 
-  // other routes
+  // Product routes
   static const String product = '${baseUrl}/api/products';
+  static const String addProductsWishList = '${baseUrl}/api/wishList/add';
+  static const String getProductsWishList = '${baseUrl}/api/wishList/get';
 }

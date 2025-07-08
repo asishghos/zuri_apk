@@ -16,7 +16,7 @@ class ZuriCategoriesResponse {
   }
 }
 
-class ZuriArticle {
+class ZuriMagazine {
   final String id;
   final String authorProfilePic;
   final String authorName;
@@ -29,7 +29,7 @@ class ZuriArticle {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  ZuriArticle({
+  ZuriMagazine({
     required this.id,
     required this.authorProfilePic,
     required this.authorName,
@@ -43,8 +43,8 @@ class ZuriArticle {
     required this.updatedAt,
   });
 
-  factory ZuriArticle.fromJson(Map<String, dynamic> json) {
-    return ZuriArticle(
+  factory ZuriMagazine.fromJson(Map<String, dynamic> json) {
+    return ZuriMagazine(
       id: json['_id'],
       authorProfilePic: json['authorProfilePic'],
       authorName: json['authorName'],

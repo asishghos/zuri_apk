@@ -20,7 +20,16 @@ import 'add_or_edit_event_overlay.dart';
 import 'multiday_events_screen.dart';
 
 class CalendarEventsPage extends StatefulWidget {
-  const CalendarEventsPage({super.key});
+  final String? eventId; // Optional eventId passed via route
+  final String? dayEventId; // Optional dayEventId for multi-day events
+  final bool?
+  openDayEventDetails; // Optional flag to open specific day event details
+  CalendarEventsPage({
+    super.key,
+    this.eventId,
+    this.dayEventId,
+    this.openDayEventDetails,
+  });
 
   @override
   State<CalendarEventsPage> createState() => _CalendarEventsPageState();
@@ -74,6 +83,10 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
   void initState() {
     super.initState();
     _checkLoginStatus();
+    // Check for eventId and handle navigation to details screens
+    if (widget.eventId != null) {
+      _handleEventDetailsNavigation();
+    }
   }
 
   Future<void> _fetchUserEvents() async {
@@ -141,6 +154,41 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
     } catch (e) {
       Developer.log("❌ Error refreshing page: $e");
       showErrorSnackBar(context, "Failed to refresh data");
+    }
+  }
+
+  // Handle navigation based on eventId and dayEventId
+  Future<void> _handleEventDetailsNavigation() async {
+    if (widget.eventId == null) return;
+
+    setState(() => _isloading = true);
+    try {
+      if (widget.dayEventId != null) {
+        MultiDayEventCollectionResponse response = await fetchMultiDayEvent(
+          context,
+          widget.eventId!,
+        );
+        // Pass dayEventId and openDayEventDetails flag to MultiDayEventsPage
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => MultiDayEventsPage(
+              result: response,
+              openDayEventDetails: true,
+              dayEventId: widget.dayEventId,
+            ),
+          ),
+        );
+      } else {
+        EventResponse responce = await fetchSingleDayEvent(
+          eventId: widget.eventId!,
+        );
+        _showEventDetails(responce);
+      }
+    } catch (e) {
+      Developer.log("❌ Error fetching event details: $e");
+      showErrorSnackBar(context, "Failed to load event details.");
+    } finally {
+      setState(() => _isloading = false);
     }
   }
 
@@ -482,22 +530,29 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
         (event.daySpecificData.isNotEmpty
             ? event.daySpecificData[0].location
             : 'Location');
+    String _getFirstAvailableImage(Event event) {
+      if (event.generatedImages != null && event.generatedImages!.isNotEmpty) {
+        for (final img in event.generatedImages!) {
+          if (img.trim().isNotEmpty) return img;
+        }
+      }
+      if (event.daySpecificData.isNotEmpty) {
+        for (int i = 0; i < event.daySpecificData.length; i++) {
+          final images = event.daySpecificData[i].daySpecificImage;
+          if (images != null) {
+            for (final img in images) {
+              if (img.trim().isNotEmpty) {
+                return img;
+              }
+            }
+          }
+        }
+      }
+      return '';
+    }
 
-    // --- Safely handle images ---
-    final List<String> eventImages =
-        (event.generatedImages != null && event.generatedImages!.isNotEmpty)
-        ? event.generatedImages!
-        : (event.daySpecificData.isNotEmpty &&
-              index >= 0 &&
-              index < event.daySpecificData.length &&
-              event.daySpecificData[index].daySpecificImage != null &&
-              event.daySpecificData[index].daySpecificImage is List)
-        ? List<String>.from(
-            event.daySpecificData[index].daySpecificImage as List,
-          )
-        : <String>[];
-    final bool shouldShowEnterDetails =
-        eventImages.isEmpty || eventImages[0].isEmpty;
+    final String eventImage = _getFirstAvailableImage(event);
+    final bool shouldShowEnterDetails = eventImage.isEmpty;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -579,7 +634,7 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
                       if (isMultiDay) {
                         MultiDayEventCollectionResponse response =
                             await fetchMultiDayEvent(context, event.id);
-                        _showMultiEventDetails(response);
+                        _showMultiEventDetails(response, false);
                       } else {
                         EventResponse responce = await fetchSingleDayEvent(
                           eventId: event.id,
@@ -632,9 +687,9 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
                 color: shouldShowEnterDetails
                     ? const Color(0xFFFDE7E9)
                     : Colors.grey[100],
-                image: !shouldShowEnterDetails && eventImages.isNotEmpty
+                image: !shouldShowEnterDetails && eventImage.isNotEmpty
                     ? DecorationImage(
-                        image: NetworkImage(eventImages[0]),
+                        image: NetworkImage(eventImage),
                         fit: BoxFit.cover,
                       )
                     : null,
@@ -680,7 +735,10 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
     );
   }
 
-  void _showMultiEventDetails(MultiDayEventCollectionResponse response) {
+  void _showMultiEventDetails(
+    MultiDayEventCollectionResponse response,
+    bool? openDayEventDetails,
+  ) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -690,7 +748,10 @@ class _CalendarEventsPageState extends State<CalendarEventsPage> {
       useSafeArea: true,
       barrierColor: Colors.white,
       elevation: 0,
-      builder: (context) => MultiDayEventsPage(result: response),
+      builder: (context) => MultiDayEventsPage(
+        result: response,
+        openDayEventDetails: openDayEventDetails,
+      ),
     ).then((_) {
       // This runs when the modal is dismissed (user swipes down or taps outside)
       // Refresh the page even if modal is just closed

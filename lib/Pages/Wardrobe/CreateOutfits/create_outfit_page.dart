@@ -9,6 +9,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
+import 'package:testing2/Global/Function/global_function.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Pages/Loading/loading_page.dart';
 import 'package:testing2/Pages/Wardrobe/CreateOutfits/bad_item_page.dart';
@@ -155,6 +156,30 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
       setState(() {
         _isProductLoading = false;
       });
+    }
+  }
+
+  Future<void> addWishList() async {
+    final productData = {
+      "productId": "123",
+      "productTitle": "Stylish Shirt",
+      "productImage": "https://img.com/shirt.png",
+      "price": 999,
+      "originalPrice": 1299,
+      "discountPercent": 23,
+      "platform": "Myntra",
+      "rating": 4.5,
+      "productUrl": "https://myntra.com/product/123",
+    };
+    try {
+      final result = await ProductApiServices.toggleWishlistItem(productData);
+      if (result['success']) {
+        print(result['message']);
+      } else {
+        print('Error: ${result['message']}');
+      }
+    } catch (e) {
+      print('Error: $e');
     }
   }
 
@@ -346,6 +371,14 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
     );
     if (response != null) {
       showSuccessSnackBar(context, "Images add successfully in event.");
+      context.goNamed(
+        'eventmainscreen',
+        extra: {
+          'eventId': widget.eventId,
+          'dayEventId': widget.dayEventId,
+          'openDayEventDetails': true,
+        },
+      );
       // context.goNamed();
     } else {
       showErrorSnackBar(context, "Failed to add images in event.");
@@ -411,19 +444,15 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
       var item = validItems[_currentIndex];
       String? type = item?.type?.toLowerCase();
 
-      if (_generatedResponse != null) {
-        return type == 'wardrobe' ? "From your Closet" : "From Ask Zuri";
-      } else if (_recommendationResponse != null) {
-        switch (type) {
-          case 'wardrobe':
-            return "From your Closet";
-          case 'uploaded_image':
-            return "From Your Upload";
-          case 'ai_suggestion':
-            return "From Zuri AI";
-          default:
-            return "From your Closet";
-        }
+      switch (type) {
+        case 'wardrobe':
+          return "From your Closet";
+        case 'uploaded_image':
+          return "From Your Upload";
+        case 'ai_generated':
+          return "From Zuri AI";
+        default:
+          return "From your Closet";
       }
     }
     return "From your Closet";
@@ -619,7 +648,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                "From closet",
+                                _getSourceText(),
                                 style: GoogleFonts.libreFranklin(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -928,7 +957,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                               product.source,
                                               product.title,
                                               product.price,
-                                              product.keyword,
+                                              product.price,
                                               product.rating,
                                               product.source,
                                               dh,
@@ -963,6 +992,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                       widget.dayEventId,
                                       _styledImageUrls,
                                     );
+                                    // context.goNamed('eventmainscreen');
                                   }
                                 },
                                 // leftIcon: true,
@@ -1191,15 +1221,18 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                       child: Text(
                         title,
                         style: GoogleFonts.libreFranklin(
-                          fontSize: 18,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFFE91E63),
                         ),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        addWishList();
+                      },
                       child: const HugeIcon(
                         icon: HugeIcons.strokeRoundedFavourite,
                         color: Colors.black,
@@ -1210,17 +1243,17 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    if (originalPrice.isNotEmpty) ...[
-                      Text(
-                        originalPrice,
-                        style: GoogleFonts.libreFranklin(
-                          fontSize: 14,
-                          color: AppColors.subTitleTextColor,
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                    ],
+                    // if (originalPrice.isNotEmpty) ...[
+                    //   Text(
+                    //     originalPrice,
+                    //     style: GoogleFonts.libreFranklin(
+                    //       fontSize: 14,
+                    //       color: AppColors.subTitleTextColor,
+                    //       decoration: TextDecoration.lineThrough,
+                    //     ),
+                    //   ),
+                    //   const SizedBox(width: 4),
+                    // ],
                     Text(
                       discountedPrice,
                       style: GoogleFonts.libreFranklin(
@@ -1233,7 +1266,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
-                          "(${discount} OFF)",
+                          "(${discount})",
                           style: GoogleFonts.libreFranklin(
                             fontSize: 12,
                             color: Colors.green,

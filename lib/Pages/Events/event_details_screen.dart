@@ -228,51 +228,66 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                           left: 20,
                           right: 20,
                           top: 8,
+                          bottom: 8,
                         ),
-                        child: GlobalPinkButton(
-                          text: "Turn My Closet into a Look",
-                          onPressed: () {
-                            context.goNamed(
-                              "myWardrobe",
-                              extra: {
-                                "isDialogBoxOpen": true,
-                                "occasion": (eventDataResult.event.isMultiDay)
-                                    ? eventDataResult
-                                          .event
-                                          .daySpecificData[widget.index ?? 0]
-                                          .eventName
-                                    : eventDataResult.event.occasion,
-                                "description":
-                                    (eventDataResult.event.isMultiDay)
-                                    ? eventDataResult
-                                          .event
-                                          .daySpecificData[widget.index ?? 0]
-                                          .description
-                                    : eventDataResult
-                                          .event
-                                          .singleDayDetails
-                                          ?.description,
+                        child: (eventDataResult.event.isStyled)
+                            ? GlobalPinkButton(
+                                text: "Shop This Look",
+                                onPressed: () {
+                                  context.goNamed('affiliateLink');
+                                },
+                              )
+                            : GlobalPinkButton(
+                                text: "Turn My Closet into a Look",
+                                onPressed: () {
+                                  context.goNamed(
+                                    "myWardrobe",
+                                    extra: {
+                                      "isDialogBoxOpen": true,
+                                      "occasion":
+                                          (eventDataResult.event.isMultiDay)
+                                          ? eventDataResult
+                                                .event
+                                                .daySpecificData[widget.index ??
+                                                    0]
+                                                .eventName
+                                          : eventDataResult.event.occasion,
+                                      "description":
+                                          (eventDataResult.event.isMultiDay)
+                                          ? eventDataResult
+                                                .event
+                                                .daySpecificData[widget.index ??
+                                                    0]
+                                                .description
+                                          : eventDataResult
+                                                .event
+                                                .singleDayDetails
+                                                ?.description,
 
-                                "eventId": eventDataResult.event.id,
-                                "location": (eventDataResult.event.isMultiDay)
-                                    ? eventDataResult
-                                          .event
-                                          .daySpecificData[widget.index ?? 0]
-                                          .location
-                                    : eventDataResult
-                                          .event
-                                          .singleDayDetails
-                                          ?.location,
-                                "dayEventId": (eventDataResult.event.isMultiDay)
-                                    ? eventDataResult
-                                          .event
-                                          .daySpecificData[widget.index ?? 0]
-                                          .id
-                                    : null,
-                              },
-                            );
-                          },
-                        ),
+                                      "eventId": eventDataResult.event.id,
+                                      "location":
+                                          (eventDataResult.event.isMultiDay)
+                                          ? eventDataResult
+                                                .event
+                                                .daySpecificData[widget.index ??
+                                                    0]
+                                                .location
+                                          : eventDataResult
+                                                .event
+                                                .singleDayDetails
+                                                ?.location,
+                                      "dayEventId":
+                                          (eventDataResult.event.isMultiDay)
+                                          ? eventDataResult
+                                                .event
+                                                .daySpecificData[widget.index ??
+                                                    0]
+                                                .id
+                                          : null,
+                                    },
+                                  );
+                                },
+                              ),
                       ),
                       SizedBox(height: 16),
                     ],

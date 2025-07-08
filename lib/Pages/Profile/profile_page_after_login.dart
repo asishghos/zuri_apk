@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:testing2/Global/Colors/app_colors.dart';
 import 'package:testing2/Global/Widget/global_widget.dart';
 import 'package:testing2/Pages/Loading/loading_page.dart';
+import 'package:testing2/Pages/Products/wishlist_page.dart';
 import 'package:testing2/Pages/Profile/support_page.dart';
 import 'package:testing2/Pages/Saved/saved_fav_page.dart';
 import 'package:testing2/Pages/uploaded_look_page.dart/uploaded_look_page.dart';
@@ -339,7 +340,16 @@ class _ProfileDrawerAfterLoginState extends State<ProfileDrawerAfterLogin> {
                           icon: HugeIcons.strokeRoundedFavourite,
                           title: 'Zuri Wishlist',
                           subtitle: 'Your faves from our online finds!',
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return WishlistPage();
+                                },
+                              ),
+                            );
+                          },
                           pinkSubtitle: false,
                         ),
                         _buildDivider(width: dw * 0.05),

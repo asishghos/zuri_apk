@@ -1,5 +1,6 @@
 import 'dart:developer' as Developer;
 
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -10,8 +11,15 @@ import 'event_details_screen.dart';
 
 class MultiDayEventsPage extends StatefulWidget {
   final MultiDayEventCollectionResponse result;
+  final bool? openDayEventDetails;
+  final String? dayEventId;
 
-  const MultiDayEventsPage({Key? key, required this.result}) : super(key: key);
+  const MultiDayEventsPage({
+    Key? key,
+    required this.result,
+    this.openDayEventDetails,
+    this.dayEventId,
+  }) : super(key: key);
 
   @override
   State<MultiDayEventsPage> createState() => _MultiDayEventsPageState();
@@ -47,6 +55,14 @@ class _MultiDayEventsPageState extends State<MultiDayEventsPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.openDayEventDetails == true && widget.dayEventId != null) {
+      _fetchSingleDayDetails(
+        eventId: widget.result.parentEvent.id,
+        dayEventId: widget.dayEventId!,
+      ).then((result) {
+        _openEventDetails(event: result); // index can be improved if needed
+      });
+    }
     resultResult = widget.result;
   }
 
@@ -193,9 +209,16 @@ class _MultiDayEventsPageState extends State<MultiDayEventsPage> {
     String eventDate = formatDate(event.date);
     String eventTime = event.eventTime;
     String eventLocation = event.location;
-    String? eventImage = (event.generatedImages.isNotEmpty)
-        ? event.generatedImages.first
-        : null;
+    String? eventImage;
+
+    if (event.daySpecificImage != null && event.daySpecificImage!.isNotEmpty) {
+      for (final img in event.daySpecificImage!) {
+        if (img.trim().isNotEmpty) {
+          eventImage = img;
+          break;
+        }
+      }
+    }
 
     // Show 'Enter Details' if image is missing or not styled
     bool shouldShowEnterDetails =
@@ -276,7 +299,7 @@ class _MultiDayEventsPageState extends State<MultiDayEventsPage> {
                             eventId: event.parentEventId,
                             dayEventId: event.id,
                           );
-                          _openEventDetails(responce, index);
+                          _openEventDetails(event: responce, index: index);
                         } catch (e) {}
                       },
                       style: ElevatedButton.styleFrom(
@@ -329,18 +352,35 @@ class _MultiDayEventsPageState extends State<MultiDayEventsPage> {
                     : null,
               ),
               child: (eventImage == null || eventImage.isEmpty)
-                  ? Center(
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
+                  ? Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: DottedBorder(
+                        options: RoundedRectDottedBorderOptions(
+                          dashPattern: [5, 5],
+                          strokeWidth: 0.96,
+                          radius: Radius.circular(32),
+                          color: Color(0xFFD34169),
+                          padding: EdgeInsets.all(8),
                         ),
-                        child: HugeIcon(
-                          icon: HugeIcons.strokeRoundedAdd01,
-                          size: 20,
-                          color: Color(0xFFE91E63),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            HugeIcon(
+                              icon: HugeIcons.strokeRoundedAddCircle,
+                              size: 24,
+                              color: const Color(0xFFE25C7E),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Style your \nlook",
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.libreFranklin(
+                                color: const Color(0xFFE25C7E),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )
@@ -352,7 +392,7 @@ class _MultiDayEventsPageState extends State<MultiDayEventsPage> {
     );
   }
 
-  void _openEventDetails(EventResponse event, int index) {
+  void _openEventDetails({required EventResponse event, int? index}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
