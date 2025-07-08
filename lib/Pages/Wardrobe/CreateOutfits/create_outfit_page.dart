@@ -754,15 +754,17 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                         ],
                                       ),
                                     ),
+                                    SizedBox(height: 16),
                                     Text(
                                       _getDescription(index),
                                       style: GoogleFonts.libreFranklin(
                                         color: Colors.black,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                        // fontWeight: FontWeight.w600,
                                       ),
                                       textAlign: TextAlign.left,
                                     ),
+                                    SizedBox(height: 16),
                                   ],
                                 );
                               },
@@ -983,8 +985,7 @@ class _CreateOutfitPageState extends State<CreateOutfitPage> {
                                     ? "Lock this Look"
                                     : "Plan in Calender",
                                 onPressed: () async {
-                                  if (widget.eventId == null &&
-                                      widget.eventId!.isEmpty)
+                                  if ((widget.eventId ?? '').isEmpty)
                                     context.goNamed('eventmainscreen');
                                   else {
                                     await _lockingForEvent(
