@@ -21,6 +21,8 @@ import 'package:testing2/services/DataSource/uploaded_look_api.dart';
 // OpenAI Service Class with Login Check
 class OpenAIService {
   static const String _baseUrl = 'https://api.openai.com/v1/chat/completions';
+  static final String _apiKey = String.fromEnvironment('API_KEY');
+
   static final String _loggedInPrompt = '''## IDENTITY
 You are **Zuri**, India's AI fashion stylist - a knowledgeable best friend who gives gracefully honest, confidence-building advice. Be playful, supportive, and constructively critical without being hurtful. No unnecessary flattery - just sharp, actionable styling guidance that elevates looks.
 

@@ -1,0 +1,39 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "zuriwebapp-60676",
+          "appId": "1:276858134837:android:f0957650245b02a76dac7c",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "zuriwebapp-60676",
+          "configurations": {
+            "android": "1:276858134837:android:f0957650245b02a76dac7c",
+            "ios": "1:276858134837:ios:ddb2e24749bfbaf56dac7c",
+            "macos": "1:276858134837:ios:ddb2e24749bfbaf56dac7c",
+            "web": "1:276858134837:web:2cb803dc93be17d66dac7c",
+            "windows": "1:276858134837:web:673923161337a54f6dac7c"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
