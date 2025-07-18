@@ -1,0 +1,70 @@
+prefs.remove('alreadyUsed'); // during development
+prefs.remove('isFirstTime'); // during development
+
+----------------------------------------------------------------------------------------------------------------
+
+Your requirement:
+First-time user → go to 'onboarding'
+Not first-time + not logged in → go to 'home'
+Not first-time + logged in → go to 'home2'
+
+----------------------------------------------------------------------------------------------------------------
+
+// need to improve the crop option ui 
+
+----------------------------------------------------------------------------------------------------------------
+
+// Home2 folder Un-used haii
+
+----------------------------------------------------------------------------------------------------------------
+op1:
+late SharedPreferences prefs                                                                                     ;
+@override
+void initState() {
+super.initState()                                                                                                ;
+initPrefs()                                                                                                      ;
+// Add the required file to uploadedImages when the page initializes
+uploadedImages.add(widget.file)                                                                                  ;
+}
+
+Future<void> initPrefs() async {
+prefs = await SharedPreferences.getInstance() ;
+}
+
+op2:
+final prefs = await SharedPreferences.getInstance()                                                              ;
+----------------------------------------------------------------------------------------------------------------
+
+Navigator route page:
+1. C:\Users\asish ghosh\OneDrive\Desktop\flutterapps\Zuri\zuri\lib\Pages\Wardrobe\image_preview_page.dart
+
+----------------------------------------------------------------------------------------------------------------
+
+// Discount in geen in product card ....
+
+----------------------------------------------------------------------------------------------------------------
+
+// use delete global dialog box
+
+----------------------------------------------------------------------------------------------------------------
+/// 🔹 TempUserDataStore
+///
+/// A singleton class to temporarily store either:
+/// - an image file (as actual File)
+/// - two strings (like name/location)
+/// - or both
+///
+/// 🔧 Data is stored in the device’s temp directory:
+/// - Image: `temp_image.png`
+/// - Strings: `temp_data.json`
+///
+/// ✅ Usage:
+/// - `save({imageFile, text1, text2})`: Store any or all fields
+/// - `load()`: Load data back into memory
+/// - `clear()`: Delete temp files
+///
+/// 🎯 Ideal for flows like: Splash → Upload → Signup → Login → Result (API call)
+/// without passing data between routes.
+///
+/// 🧼 Temporary only — data may be cleared on app close or system cleanup.
+----------------------------------------------------------------------------------------------------------------

@@ -1,0 +1,257 @@
+[
+  {
+    "set": 1,
+    "body": "Apple",
+    "undertone": "Cool",
+    "keywords": [
+      "V-neck pastel blouse",
+      "High-waist bootcut jeans",
+      "Embroidered cotton kurti in icy blue",
+      "Structured A-line midi dress",
+      "Pointed silver flats",
+      "Frosted pearl drop earrings",
+      "Lavender crop-blazer co-ord",
+      "Drop-shoulder chambray top",
+      "Navy straight-cut trousers",
+      "Mint green ethnic sharara set"
+    ]
+  },
+  {
+    "set": 2,
+    "body": "Pear",
+    "undertone": "Warm",
+    "keywords": [
+      "Off-shoulder mustard top",
+      "Flared linen trousers",
+      "Maroon bandhani kurta",
+      "Wrap dress in burnt orange",
+      "Tan Kolhapuri sandals",
+      "Oxidized jhumka earrings",
+      "Coral loungewear co-ord",
+      "Frill sleeve rust blouse",
+      "Wide-leg beige palazzos",
+      "Mirror-work lehenga set"
+    ]
+  },
+  {
+    "set": 3,
+    "body": "Hourglass",
+    "undertone": "Neutral",
+    "keywords": [
+      "Square-neck fitted blouse",
+      "High-rise taupe skirt",
+      "Georgette saree in greige",
+      "Belted sheath dress",
+      "Nude kitten heels",
+      "Pearl and gold chain necklace",
+      "Double-breasted beige co-ord",
+      "Scoop neck jersey top",
+      "Straight-cut formal pants",
+      "Embroidered angrakha kurta"
+    ]
+  },
+  {
+    "set": 4,
+    "body": "Rectangle",
+    "undertone": "Cool",
+    "keywords": [
+      "Puff sleeve mint blouse",
+      "Cropped mom jeans",
+      "Blue ikat print kurta",
+      "Lavender skater dress",
+      "White platform sneakers",
+      "Crystal studded hoops",
+      "Monotone blazer co-ord",
+      "Cap sleeve pastel crop",
+      "Ice grey cargo pants",
+      "Indigo block print suit set"
+    ]
+  },
+  {
+    "set": 5,
+    "body": "Inverted Triangle",
+    "undertone": "Warm",
+    "keywords": [
+      "Ruffle hem rust blouse",
+      "Pleated beige trousers",
+      "Red zari kurti",
+      "Flowy tiered dress in peach",
+      "Terracotta wedge sandals",
+      "Beaded golden choker",
+      "Peach wrap co-ord set",
+      "Halter neck cotton top",
+      "Khaki drawstring pants",
+      "Yellow gota-patti suit"
+    ]
+  },
+  {
+    "set": 6,
+    "body": "Apple",
+    "undertone": "Warm",
+    "keywords": [
+      "Wrap front cotton blouse",
+      "Straight-fit beige jeans",
+      "Orange floral print kurta",
+      "Empire waist mustard dress",
+      "Leather tan ankle boots",
+      "Bronze layered necklace",
+      "Rust corduroy co-ord set",
+      "Flowy rayon peplum top",
+      "Pull-on linen trousers",
+      "Printed kaftan with zari"
+    ]
+  },
+  {
+    "set": 7,
+    "body": "Pear",
+    "undertone": "Cool",
+    "keywords": [
+      "Cuffed sleeve blue blouse",
+      "Dark wash slim-fit jeans",
+      "Cool-toned mirror work kurti",
+      "Fit-and-flare icy lavender dress",
+      "Silver embellished sandals",
+      "Ice-blue tassel earrings",
+      "Pastel blazer co-ord",
+      "Ruffle detail blouse",
+      "Fleece joggers in soft grey",
+      "Embroidered cotton suit set"
+    ]
+  },
+  {
+    "set": 8,
+    "body": "Hourglass",
+    "undertone": "Warm",
+    "keywords": [
+      "Tie-front rust blouse",
+      "Fitted pleated midi skirt",
+      "Block print Anarkali in earthy tones",
+      "Ruched bodycon dress in copper",
+      "Tan braided flats",
+      "Layered shell earrings",
+      "Warm beige knit co-ord",
+      "Fitted sleeveless top",
+      "High-rise bootcut trousers",
+      "Kalamkari kurta set"
+    ]
+  },
+  {
+    "set": 9,
+    "body": "Rectangle",
+    "undertone": "Neutral",
+    "keywords": [
+      "Ruched cotton blouse",
+      "Baggy cargo trousers",
+      "Printed monochrome kurta",
+      "Relaxed fit slip dress",
+      "Grey chunky sneakers",
+      "Minimalist metal cuffs",
+      "Relaxed oversized co-ord",
+      "Crew neck ribbed top",
+      "Slouchy fit jeans",
+      "Black and white chikankari set"
+    ]
+  },
+  {
+    "set": 10,
+    "body": "Inverted Triangle",
+    "undertone": "Cool",
+    "keywords": [
+      "Draped sleeve chiffon top",
+      "Light blue high-waist pants",
+      "Indigo batik print kurti",
+      "A-line pastel dress",
+      "White mules with silver trim",
+      "Frost-toned ear cuffs",
+      "Structured co-ord in sky blue",
+      "Wide boat neck tee",
+      "Cigarette trousers",
+      "Embroidered organza dupatta suit"
+    ]
+  },
+  {
+    "set": 11,
+    "body": "Apple",
+    "undertone": "Neutral",
+    "keywords": [
+      "Linen button-down blouse",
+      "Straight-leg taupe pants",
+      "Greige ikat kurti",
+      "Soft A-line tiered dress",
+      "Neutral beige moccasins",
+      "Gold-toned geometric earrings",
+      "Casual cotton co-ord in sand tone",
+      "Half sleeve v-cut top",
+      "Relaxed fit chinos",
+      "Handloom neutral-toned kurta"
+    ]
+  },
+  {
+    "set": 12,
+    "body": "Pear",
+    "undertone": "Neutral",
+    "keywords": [
+      "Side-slit tunic top",
+      "Wide-leg khaki trousers",
+      "Subtle printed pastel kurta",
+      "Empire line beige dress",
+      "Neutral tone block heels",
+      "Dainty pearl chain",
+      "Earth-tone cotton co-ord",
+      "Pleated puff sleeve top",
+      "Soft stretch palazzos",
+      "Soft brown embroidered kurta set"
+    ]
+  },
+  {
+    "set": 13,
+    "body": "Hourglass",
+    "undertone": "Cool",
+    "keywords": [
+      "Cowl neck lavender blouse",
+      "Slim-fit charcoal pants",
+      "Powder blue chikankari kurti",
+      "Body-hugging icy sheath dress",
+      "Metallic pointed flats",
+      "Crystal statement earrings",
+      "Slate blue satin co-ord",
+      "Fitted high-neck top",
+      "Icy grey slit trousers",
+      "Blue lace kurta and pant set"
+    ]
+  },
+  {
+    "set": 14,
+    "body": "Rectangle",
+    "undertone": "Warm",
+    "keywords": [
+      "Boxy mustard tee",
+      "Flared off-white pants",
+      "Maroon gota kurti",
+      "Wrap style orange dress",
+      "Brick red espadrilles",
+      "Boho tassel necklace",
+      "Ochre cotton co-ord",
+      "Half-sleeve rust top",
+      "Drawstring joggers",
+      "Mirror embellished ethnic suit"
+    ]
+  },
+  {
+    "set": 15,
+    "body": "Inverted Triangle",
+    "undertone": "Neutral",
+    "keywords": [
+      "Cape sleeve top in taupe",
+      "Slim khaki trousers",
+      "Neutral tone floral kurti",
+      "Midi wrap dress in greige",
+      "Beige lace-up sandals",
+      "Matte gold drop earrings",
+      "Tailored stone co-ord set",
+      "Asymmetric beige blouse",
+      "Pleat front trousers",
+      "Embroidered pastel chikankari set"
+    ]
+  }
+]
